@@ -31,8 +31,13 @@
 
   Stories (35): 3 leads + 10 featured + 22 ALSO, every one dated
   Saturday 21 November 2026, every one carrying its source in
-  parentheses. Regions (recounted from the 35 kept stories): EUROPE 16,
-  ASIA 1, MIDDLE EAST 5, AFRICA 3, AMERICAS 6, OCEANIA 2, GLOBAL 2.
+  parentheses. Regions (recounted from the 35 kept stories): EUROPE 12,
+  ASIA 8, MIDDLE EAST 6, AFRICA 1, AMERICAS 4, OCEANIA 2, GLOBAL 2.
+  v6: 12 sports ALSO items replaced with substantive Sat 21 Nov news
+  (Yonhap/Geo/AP/Thai Govt/The News/NewsFirst/Reuters/IANS/Antara/AFP);
+  only 4 sports remain in ALSO (#20, #21, #28, #29). U-17 items are
+  counted by the winning team's region (as in v5); Banda Sea counts
+  as Oceania, COP31 (#7) as Global.
   DATE CHECK lists the Fri 19-20 Nov items deliberately left out --
   the Kyiv Bridges strike (overnight 20 Nov) is OUT entirely, no part
   of it is claimed as 21 Nov.
@@ -66,8 +71,8 @@ BLUE = (30, 70, 160)
 # more such contours, each filled separately so overlaps union.
 #   * _band(): a curved stroke as an outline -- outer arc + inner
 #     arc. Thickness follows the classic serif contrast: thick
-#     (9.6) where the curve runs vertically (east/west sides),
-#     thin (4.6) where it runs horizontally (top/bottom).
+#     (8.3) where the curve runs vertically (east/west sides),
+#     thin (4.0) where it runs horizontally (top/bottom).
 #     A full 360-degree band IS a ring with a real counter.
 #   * _stem(): vertical stem with bracketed serif feet -- flared
 #     triangular feet, not rounded blobs.
@@ -95,7 +100,7 @@ def _ell_pts(cx, cy, rx, ry, a0, a1, step=6.0):
 def _thick(a, tscale=1.0):
     """Stroke thickness at ellipse angle a (0 deg = east, 90 = south):
     thick at the sides, thin at top/bottom -- Times contrast."""
-    return (4.6 + 5.0 * abs(math.cos(math.radians(a)))) * tscale
+    return (4.0 + 4.3 * abs(math.cos(math.radians(a)))) * tscale
 
 
 def _band(cx, cy, rx, ry, a0, a1, tscale=1.0):
@@ -148,7 +153,7 @@ def _sband(pts):
         ln = (dx * dx + dy * dy) ** 0.5 or 1.0
         tx, ty = dx / ln, dy / ln
         nx, ny = -ty, tx
-        t = 4.6 + 5.0 * abs(nx)
+        t = 4.0 + 4.3 * abs(nx)
         d = min(i, n - 1 - i)
         if d < 3:
             t *= 0.8 + 0.2 * d / 3.0
@@ -161,7 +166,7 @@ def _rect_c(x0, y0, x1, y1):
     return [[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]]
 
 
-def _stem_c(x, y0, y1, w=9.0, top=True, bot=True, foot=6.0, br=5.0):
+def _stem_c(x, y0, y1, w=7.5, top=True, bot=True, foot=5.0, br=5.0):
     """Vertical stem with bracketed serif feet (flared feet)."""
     x0 = x - w / 2.0
     x1 = x + w / 2.0
@@ -186,7 +191,7 @@ def _stem_c(x, y0, y1, w=9.0, top=True, bot=True, foot=6.0, br=5.0):
     return [pts]
 
 
-def _diag_c(x0, y0, x1, y1, w=9.0):
+def _diag_c(x0, y0, x1, y1, w=7.5):
     dx, dy = x1 - x0, y1 - y0
     ln = (dx * dx + dy * dy) ** 0.5
     nx, ny = -dy / ln * w / 2.0, dx / ln * w / 2.0
@@ -1421,11 +1426,11 @@ STATS = [
 ]
 
 REGIONS = [
-    ("EUROPE", 16, (36, 64, 120)),
-    ("ASIA", 1, RED),
-    ("MIDDLE EAST", 5, (150, 100, 20)),
-    ("AFRICA", 3, GREEN),
-    ("AMERICAS", 6, (90, 60, 140)),
+    ("EUROPE", 12, (36, 64, 120)),
+    ("ASIA", 8, RED),
+    ("MIDDLE EAST", 6, (150, 100, 20)),
+    ("AFRICA", 1, GREEN),
+    ("AMERICAS", 4, (90, 60, 140)),
     ("OCEANIA", 2, (20, 120, 120)),
     ("GLOBAL", 2, (70, 70, 70)),
 ]
@@ -1516,7 +1521,10 @@ BOT5 = [
 
 # 22 ALSO items (14-35). All 22 are verified Sat 21 Nov 2026: R5-R7
 # from the first audit plus the second research pass (Sat sports
-# results, Sat announcements, Reuters/AP/BBC Sat wires). Every item
+# results, Sat announcements, Reuters/AP/BBC Sat wires). v6: 12 sports
+# items replaced with substantive Sat 21 Nov news (first-reported
+# Saturday items included: #32 PLN deals, #33 capture announced Sat,
+# #34 EU proposal revealed Sat, #35 talks disclosed Sat). Every item
 # carries its source in parentheses plus its verification tag.
 ALSO_LEFT = [
     "14 YEMEN — SAUDI STRIKES ON HODEIDAH, MOCHA (GEOPOLITIKI) · CLAIM",
@@ -1527,23 +1535,23 @@ ALSO_LEFT = [
     "19 WASHINGTON — RECORD BLACK DEMOCRATS IN CONGRESS (REUTERS) · REPORTED",
     "20 ENGLAND — MCKINNEY CALLED UP FOR S AFRICA (BBC) · REPORTED",
     "21 AUSTRALIA — CHAUDHARY DOWNS ENGLAND IN T20 (BBC) · REPORTED",
-    "22 DURHAM — CLEMSON BEATS DUKE 20-10 (4.0 SPORTS) · REPORTED",
-    "23 BATON ROUGE — MANNING TD STUNS LSU (4.0 SPORTS) · REPORTED",
-    "24 GEORGIA — BULLDOGS ROUT MISSOURI 48-21 (4.0 SPORTS) · REPORTED",
+    "22 SEJONG — FREIGHT TRAIN DERAILS, HALTS MAIN LINE (YONHAP) · REPORTED",
+    "23 BALOCHISTAN — FORCES KILL 15 MILITANTS IN MASTUNG (GEO NEWS) · REPORTED",
+    "24 BRAZIL — MOSQUITOES CUT DENGUE 69% IN CHILD STUDY (AP) · REPORTED",
 ]
 
 ALSO_RIGHT = [
-    "25 AKRON — ZIPS RALLY PAST UMASS 34-33 (4.0 SPORTS) · REPORTED",
-    "26 DOHA — MALI 3 NEW ZEALAND 0 AT U-17 WC (FOF) · REPORTED",
-    "27 DOHA — MOROCCO 6 FIJI 0 AT U-17 WC (FOF) · REPORTED",
+    "25 BANGKOK — PM CHAIRS ARSENIC EMERGENCY MEETING (GOVT HOUSE) · REPORTED",
+    "26 NEW DELHI — PAKISTAN MINISTER ADDRESSES SCO FORUM (THE NEWS) · REPORTED",
+    "27 COLOMBO — COURT CLEARS ORGANISED-CRIME BILL (NEWSFIRST) · REPORTED",
     "28 DOHA — BELGIUM 3 VIETNAM 2 AT U-17 WC (FOF) · REPORTED",
     "29 DOHA — SPAIN 5 CHINA 0 AT U-17 WC (FOF) · REPORTED",
-    "30 BILBAO — ESPANYOL WIN 1-0 AT ATHLETIC (SPORTSBRAIN24) · REPORTED",
-    "31 MUNICH — BAYERN HELD 1-1 BY COLOGNE (SPORTSBRAIN24) · REPORTED",
-    "32 TROYES — TROYES BEAT LE HAVRE 3-1 (SPORTSBRAIN24) · REPORTED",
-    "33 CONSTANTA — FARUL 2 U CLUJ 3 (SPORTSBRAIN24) · REPORTED",
-    "34 GILLINGHAM — GILLS 3 CREWE 3 IN LEAGUE TWO (SPORTRADAR) · REPORTED",
-    "35 NEWPORT — NEWPORT 2 SWINDON 0 (SPORTRADAR) · REPORTED",
+    "30 MADRID — SPAIN TO EXTEND BANK TAX TO FUND HOUSING (REUTERS) · REPORTED",
+    "31 MUMBAI — RECORD FOREIGN INFLOWS INTO INDIA STOCKS (IANS) · REPORTED",
+    "32 ANTALYA — PLN SIGNS SIX RENEWABLE POWER DEALS (ANTARA) · REPORTED",
+    "33 MEXICO — FBI TOP-10 FUGITIVE CAPTURED IN SINALOA (REUTERS) · REPORTED",
+    "34 PARIS — DENMARK URGES EU CURBS ON RUSSIANS (REUTERS) · REPORTED",
+    "35 TEHRAN — QATARI DELEGATION HELD TALKS IN TEHRAN (AFP) · REPORTED",
 ]
 
 DATE_CHECK = ("DATE CHECK — LEFT OUT: KYIV BRIDGES STRIKE (OVERNIGHT "
