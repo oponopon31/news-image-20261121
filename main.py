@@ -265,14 +265,14 @@ GLYPHS = {
     'a': (54, [P(_band_c(26, 48, 20, 22, 0, 360),
                   _band_c(26, 36, 20, 14, 180, 360),
                   _stem_c(46, 20, 68, 8, top=False))]),
-    'b': (56, [P(_stem_c(8, 0, 68, 10), _band_c(28, 48, 20, 22, 0, 360))]),
+    'b': (52, [P(_stem_c(8, 0, 68, 10), _band_c(28, 48, 20, 22, 0, 360))]),
     'c': (50, [P(_band_c(27, 46, 20, 24, 50, 310))]),
     'd': (56, [P(_band_c(26, 48, 20, 22, 0, 360),
                   _stem_c(46, 0, 68, 10))]),
-    # e: nearly-full bowl (300-degree band, gap at upper right)
-    # plus a crossbar -- unmistakably e, not a partial bowl.
-    'e': (52, [P(_band_c(26, 46, 20, 24, -5, 320),
-                  _rect_c(6, 40, 46, 46), _rect_c(41, 31, 47, 46))]),
+    # e: open bowl (90-degree gap at upper right) + crossbar -- the eye
+    # is visibly open, unmistakably e, not o/theta. No right connector.
+    'e': (48, [P(_band_c(24, 46, 19, 23, 25, 295),
+                  _rect_c(5, 40, 42, 46))]),
     'f': (46, [P(_stem_c(26, 12, 68, 9, top=False),
                   _band_c(26, 14, 15, 14, 180, 320),
                   _rect_c(10, 32, 42, 37))]),
@@ -533,6 +533,19 @@ def _render_glyph(ch, em, weight, italic):
     return res
 
 
+# Kerning (em units, negative tightens): pairs whose side bearings
+# leave a visibly wider gap than the surrounding pairs.
+KERN = {
+    ('r', 'd'): -3,
+}
+
+
+def _pair_kern(prev, ch, em):
+    if prev is None:
+        return 0
+    return int(round(KERN.get((prev, ch), 0) * em / 100.0))
+
+
 def _glyph_adv(ch, em, weight, italic):
     return _render_glyph(ch, em, weight, italic)[0]
 
@@ -646,8 +659,11 @@ class Canvas:
     def vtext(self, x, y, s, em, c, weight=1.0, italic=False):
         """Draw smooth vector serif text. (x, y) = top-left of the em
         box; em = em height in px. Returns x just past the last glyph."""
+        prev = None
         for ch in s:
             ch = NORMALISE.get(ch, ch)
+            if prev is not None:
+                x += _pair_kern(prev, ch, em)
             adv, gw, gh, ink = _render_glyph(ch, em, weight, italic)
             for dx, dy, a in ink:
                 px, py = x + dx, y + dy
@@ -660,13 +676,18 @@ class Canvas:
                             int(bg[i] + (c[i] - bg[i]) * a + 0.5)
                             for i in range(3)))
             x += adv
+            prev = ch
         return x
 
     def vtext_width(self, s, em, weight=1.0, italic=False):
         w = 0
+        prev = None
         for ch in s:
             ch = NORMALISE.get(ch, ch)
+            if prev is not None:
+                w += _pair_kern(prev, ch, em)
             w += _glyph_adv(ch, em, weight, italic)
+            prev = ch
         return w
 
     def vtext_centred(self, cx, y, s, em, c, weight=1.0, italic=False):
