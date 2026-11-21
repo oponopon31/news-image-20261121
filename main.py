@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """THE WORLD IN ONE DAY -- front page for Saturday 21 November 2026.
 
-  news21 (22 Nov 2026): 35 stories, all dated Saturday 21 November 2026.
+  news21 v4 (22 Nov 2026): 35 stories, all dated Saturday 21 November
+  2026 -- REBUILT after a date audit found 28 of the v3 stories were
+  Fri 20 Nov. The 7 confirmed Sat stories are kept; the other 28 are
+  replaced with verified Sat 21 Nov stories (Reuters/AP/BBC/ESA/GFZ
+  + Sat sports results). NEVER pad with a Friday story: every item
+  here happened, or was first reported, on Sat 21 Nov 2026.
   Layout follows the rank-1 news20 reference (date as masthead, stat
   strip, region bar, 3 illustrated leads, 10 featured with thumbnails,
   world map + ALSO list, DATE CHECK box, footer).
@@ -26,9 +31,11 @@
 
   Stories (35): 3 leads + 10 featured + 22 ALSO, every one dated
   Saturday 21 November 2026, every one carrying its source in
-  parentheses. Regions (recounted from the 35 kept stories): EUROPE 9,
-  ASIA 6, MIDDLE EAST 5, AFRICA 4, AMERICAS 8, OCEANIA 1, GLOBAL 2.
-  DATE CHECK lists the items deliberately left out (19-20 Nov news).
+  parentheses. Regions (recounted from the 35 kept stories): EUROPE 16,
+  ASIA 1, MIDDLE EAST 5, AFRICA 3, AMERICAS 6, OCEANIA 2, GLOBAL 2.
+  DATE CHECK lists the Fri 19-20 Nov items deliberately left out --
+  the Kyiv Bridges strike (overnight 20 Nov) is OUT entirely, no part
+  of it is claimed as 21 Nov.
 """
 import hashlib
 import math
@@ -1332,12 +1339,12 @@ MAP_SPANS = {
     16: [(13, 13)],
 }
 # story number -> (map col, map row, label dx, label dy)
-# 10 (BepiColombo) is in orbit round Mercury: off the map, noted below.
+# 6 (BepiColombo) is in orbit round Mercury: off the map, noted below.
 MAP_DOTS = [
-    (1, 26, 3, 8, -4), (2, 8, 4, -12, -8), (3, 31, 7, 6, 4),
-    (4, 36, 7, 6, -4), (5, 27, 4, -14, -6), (6, 24, 3, -10, -10),
-    (7, 10, 6, 6, 4), (8, 12, 11, -12, 2), (9, 42, 11, 6, -4),
-    (11, 38, 5, 6, -4), (12, 30, 5, -4, -12), (13, 25, 2, 6, -6),
+    (1, 31, 7, 6, 4), (2, 25, 2, 6, -6), (3, 30, 6, 6, 4),
+    (4, 30, 5, -4, -12), (5, 42, 11, 6, -4), (7, 27, 4, -14, -6),
+    (8, 33, 6, 6, 4), (9, 43, 10, 6, -4), (10, 24, 3, -10, -10),
+    (11, 27, 1, 6, -6), (12, 12, 11, -12, 2), (13, 27, 3, 8, -4),
 ]
 
 def draw_map(cv, ox, oy, cell=5):
@@ -1374,157 +1381,157 @@ LEGEND = ("HOW WE CHECKED — CONFIRMED = 2+ OUTLETS · OFFICIAL = ON THE "
           "RECORD · REPORTED = ONE OUTLET · CLAIM = ONE SIDE'S ACCOUNT")
 
 STATS = [
-    ("400+", "DRONES AND MISSILES", "FIRED AT UKRAINE"),
-    ("-5.28%", "NASDAQ'S WORST WEEK", "SINCE 2020"),
-    ("300,000+", "PEOPLE EVACUATED", "BEFORE CYCLONE AKVAN"),
+    ("3", "MISSILES INTERCEPTED", "OVER RIYADH"),
+    ("70,000", "TENTS FLOODED", "IN GAZA'S FIRST STORM"),
     ("6.8", "MAGNITUDE OF THE PERU", "AND BANDA SEA QUAKES"),
-    ("$7.25bn", "BAYER ROUNDUP DEAL", "APPROVED IN THE US"),
-    ("7.1m", "ACRES BURNED IN", "INDONESIA'S 2026 FIRES"),
+    ("2", "TANKERS HIT NEAR", "THE STRAIT OF HORMUZ"),
+    ("146", "PEOPLE SAFE AFTER", "AIR NIUGINI DIVERSION"),
+    ("128", "STATES AT THE UN", "KILLER-ROBOT TALKS"),
 ]
 
 REGIONS = [
-    ("EUROPE", 9, (36, 64, 120)),
-    ("ASIA", 6, RED),
+    ("EUROPE", 16, (36, 64, 120)),
+    ("ASIA", 1, RED),
     ("MIDDLE EAST", 5, (150, 100, 20)),
-    ("AFRICA", 4, GREEN),
-    ("AMERICAS", 8, (90, 60, 140)),
-    ("OCEANIA", 1, (20, 120, 120)),
+    ("AFRICA", 3, GREEN),
+    ("AMERICAS", 6, (90, 60, 140)),
+    ("OCEANIA", 2, (20, 120, 120)),
     ("GLOBAL", 2, (70, 70, 70)),
 ]
 
-# Grounded times only: Peru quake 00:09 UTC (research); US market close
-# 21:00 UTC (16:00 EST); the rest are coarse labels, not invented times.
+# Grounded times only: Peru quake 00:09 UTC (GFZ); Banda Sea quake
+# 09:42 UTC (GFZ); BepiColombo insertion 18:24 UTC (ESA); the rest
+# are coarse labels, not invented times.
 TIMELINE = [
     ("00:09 UTC", "PERU QUAKE 6.8 STRIKES"),
-    ("MORNING", "TANKER HIT NEAR HORMUZ"),
+    ("09:42 UTC", "BANDA SEA QUAKE 6.8"),
     ("AFTERNOON", "COP31 INTO OVERTIME"),
-    ("21:00 UTC", "S&P -3.7%, NASDAQ -5.28%"),
+    ("18:24 UTC", "BEPICOLOMBO ORBITS MERCURY"),
     ("NIGHT", "MISSILES FIRED AT RIYADH"),
 ]
 
 TOP3 = [
-    dict(pic=pic_kyiv, tag="KYIV + POLAND", tag2="MISSILES DOWN IN POLAND",
-         cap="CONFIRMED · BBC", w=304, pic_h=102, head_em=19,
-         kicker="1 KYIV AND EASTERN POLAND — WAR",
-         head="Russia strikes Kyiv; missiles land in Poland",
-         body="Russia fired 400+ drones and 110 missiles at Ukraine, "
-              "killing at least eight in Kyiv and cutting power in ten "
-              "regions. Two missiles and a drone came down in eastern "
-              "Poland; PM Tusk called it a provocation. (BBC)"),
-    dict(pic=pic_selloff, tag="AI SELL-OFF", tag2="WORST WEEK SINCE 2020",
-         cap="CONFIRMED · BBC", w=304, pic_h=102, head_em=19,
-         kicker="2 NEW YORK — LONDON — TOKYO — MARKETS",
-         head="AI sell-off sinks world markets",
-         body="The S&P 500 fell 3.7% into correction and the Nasdaq "
-              "dropped 5.28% in its worst week since 2020, as doubts "
-              "over AI spending crushed chip stocks. Nikkei fell 5.06%, "
-              "gold 4.6%, Bitcoin to about $58,000. (BBC)"),
-    dict(pic=pic_riyadh, tag="RIYADH", tag2="THIRD NIGHT OF ALERTS",
-         cap="REPORTED · AL JAZEERA", w=304, pic_h=102, head_em=19,
-         kicker="3 RIYADH — MISSILES",
+    dict(pic=pic_riyadh, tag="RIYADH", tag2="THREE MISSILES DOWN",
+         cap="CONFIRMED · REUTERS", w=304, pic_h=102, head_em=19,
+         kicker="1 RIYADH — MISSILES",
          head="Houthis fire missiles at Riyadh",
-         body="The coalition intercepted three Houthi ballistic missiles "
-              "headed for Riyadh, the third straight night of alerts, as "
-              "the Houthis threatened ports and a power station. Strikes "
-              "hit Hodeida and Sanaa. (Al Jazeera)"),
+         body="Saudi defences intercepted three Houthi ballistic "
+              "missiles headed for Riyadh early on Saturday, the "
+              "coalition said, after the attack was confirmed "
+              "shortly after 02:00. (Reuters)"),
+    dict(pic=pic_flags, tag="WARSAW", tag2="NATO CHIEF IN POLAND",
+         cap="REPORTED · REUTERS", w=304, pic_h=102, head_em=19,
+         kicker="2 WARSAW — NATO",
+         head="NATO will defend every inch of Poland",
+         body="NATO chief Mark Rutte, in Warsaw a day after "
+              "missiles and a drone came down in Poland, said the "
+              "alliance will defend every inch of Polish "
+              "territory. (Reuters)"),
+    dict(pic=pic_cyclone, tag="GAZA", tag2="70,000 TENTS FLOODED",
+         cap="CONFIRMED · AL JAZEERA", w=304, pic_h=102, head_em=19,
+         kicker="3 GAZA — FLOODS",
+         head="Gaza floods swamp 70,000 tents",
+         body="The first winter storm flooded about 70,000 tents "
+              "and left some 350,000 people exposed, as heavy rain "
+              "fell late on Friday into Saturday. Five were killed, "
+              "including four children. (Al Jazeera)"),
 ]
 
 MID5 = [
-    dict(pic=pic_cyclone, tag="CYCLONE AKVAN", cap="OFFICIAL · IMD",
-         kicker="4 ODISHA, INDIA — CYCLONE",
-         head="Cyclone Akvan weakens over Odisha",
-         body="Landfall near Gopalpur; 209 mm rain. 300,000+ evacuated. (IMD)"),
-    dict(pic=pic_globe, tag="COP31: NO DEAL", cap="CONFIRMED · BBC",
-         kicker="5 ANTALYA — CLIMATE",
+    dict(pic=pic_fire, tag="BASRA FIRE", cap="REPORTED · REUTERS",
+         kicker="4 BASRA, IRAQ — FIRE",
+         head="Basra power plant fire kills four",
+         body="Gas blast at Hartha station; four dead, 30-35 hurt. (Reuters)"),
+    dict(pic=pic_seaquake, tag="BANDA SEA QUAKE", cap="CONFIRMED · REUTERS",
+         kicker="5 BANDA SEA — QUAKE",
+         head="Banda Sea quake near Timor-Leste",
+         body="Magnitude 6.8 at 09:42 UTC, 226 km from Dili. (Reuters)"),
+    dict(pic=pic_mercury, tag="MERCURY ORBIT", cap="OFFICIAL · ESA",
+         kicker="6 MERCURY — SPACE",
+         head="BepiColombo enters Mercury orbit",
+         body="Insertion at 18:24 UTC on Saturday, after eight years. (ESA)"),
+    dict(pic=pic_summit, tag="COP31: NO DEAL", cap="REPORTED · AP",
+         kicker="7 ANTALYA — CLIMATE",
          head="COP31 deadlocked over fossil fuels",
-         body="Summit in Antalya into overtime; EU warns of a step back. (BBC)"),
-    dict(pic=pic_flags, tag="UK-EU DEAL", cap="CONFIRMED · BBC",
-         kicker="6 BRUSSELS — DIPLOMACY",
-         head="UK and EU sign three post-Brexit deals",
-         body="Food, carbon and youth mobility deals signed in Brussels. (BBC)"),
-    dict(pic=pic_hack, tag="FBI HACKED", cap="REPORTED · BBC",
-         kicker="7 WASHINGTON — CYBER",
-         head="FBI database and USDA hacked",
-         body="Hackers entered the FBI crime database and a USDA system. (BBC)"),
-    dict(pic=pic_quake, tag="PERU QUAKE", cap="REPORTED · XINHUA",
-         kicker="8 JUNIN, PERU — QUAKE",
-         head="Peru quake shakes Andes, felt in Lima",
-         body="Magnitude 6.8 in Junin, 129 km deep; felt in Lima. (Xinhua)"),
+         body="Talks in overtime on Saturday; fossil fuels left out. (AP)"),
+    dict(pic=pic_globe, tag="HORMUZ HIT", cap="CONFIRMED · REUTERS",
+         kicker="8 STRAIT OF HORMUZ — SHIPPING",
+         head="Two tankers hit near Hormuz",
+         body="UKMTO reports two tankers struck on Saturday. (Reuters)"),
 ]
 
 BOT5 = [
-    dict(pic=pic_seaquake, tag="BANDA SEA QUAKE", cap="REPORTED · REUTERS",
-         kicker="9 BANDA SEA — QUAKE",
-         head="Banda Sea quake near Timor-Leste",
-         body="Magnitude 6.8 at 143 km deep; no tsunami threat. (Reuters)"),
-    dict(pic=pic_mercury, tag="MERCURY ORBIT", cap="CONFIRMED · BBC",
-         kicker="10 MERCURY — SPACE",
-         head="BepiColombo enters Mercury orbit",
-         body="After eight years and six billion miles in space. (BBC)"),
-    dict(pic=pic_summit, tag="TRUMP SUMMIT", cap="REPORTED · BBC",
-         kicker="11 SHENZHEN — SUMMIT",
-         head="Trump defends Putin and Xi ties",
-         body="After the Shenzhen summit; Zelensky called Putin a killer. (BBC)"),
-    dict(pic=pic_fire, tag="BASRA FIRE", cap="REPORTED · REUTERS",
-         kicker="12 BASRA, IRAQ — FIRE",
-         head="Basra power plant fire kills four",
-         body="Gas blast at Hartha station; four dead, about 30 hurt. (Reuters)"),
-    dict(pic=pic_plane, tag="DENMARK EXPELS", cap="CONFIRMED · BBC",
-         kicker="13 COPENHAGEN — SECURITY",
-         head="Denmark expels Russian diplomat over murder plot",
-         body="Two arrested; attache expelled over plot on Kyivstoner. (BBC)"),
+    dict(pic=pic_plane, tag="EMERGENCY LANDING", cap="REPORTED · AP",
+         kicker="9 DAVAO — DIVERSION",
+         head="Air Niugini jet lands after engine alert",
+         body="PX19 Hong Kong to Port Moresby diverted; 146 aboard safe. (AP)"),
+    dict(pic=pic_hack, tag="KILLER ROBOTS", cap="REPORTED · REUTERS",
+         kicker="10 GENEVA — UN TALKS",
+         head="UN robot talks end with no binding rules",
+         body="128 states agree only to keep talking; talks ended 04:30. (Reuters)"),
+    dict(pic=pic_fire, tag="SHIP ON FIRE", cap="CONFIRMED · REUTERS",
+         kicker="11 GULF OF FINLAND — DRONES",
+         head="Drones hit Russian cargo ship Sparta II",
+         body="Two drones struck the ship; it caught fire and drifted. (Reuters)"),
+    dict(pic=pic_quake, tag="PERU QUAKE", cap="OFFICIAL · GFZ",
+         kicker="12 JUNIN, PERU — QUAKE",
+         head="Peru quake shakes Andes, felt in Lima",
+         body="Magnitude 6.8 at 00:09 UTC on Saturday; felt in Lima. (GFZ)"),
+    dict(pic=pic_kyiv, tag="KYIV MEETING", cap="REPORTED · BBC",
+         kicker="13 KYIV — UKRAINE",
+         head="Zelensky: bridge strikes a fair response",
+         body="With UK defence chief Streeting in Kyiv, he cited 109 attacks. (BBC)"),
 ]
 
-# 22 ALSO items (14-35). Dropped 12 of the 34 candidates: killer-robot
-# talks, Nepal PM visit, Myanmar sanctions, Somalia UAE claims, ANC
-# cities, Afghan mortar, Voyager 1, Harden 50-point game, Bolsonaro
-# hospital, Gupta sentencing, Zecler sentences, Anthropic IPO slide —
-# the weakest / least visual / most duplicative. Every item carries
-# its source in parentheses plus its verification tag.
+# 22 ALSO items (14-35). All 22 are verified Sat 21 Nov 2026: R5-R7
+# from the first audit plus the second research pass (Sat sports
+# results, Sat announcements, Reuters/AP/BBC Sat wires). Every item
+# carries its source in parentheses plus its verification tag.
 ALSO_LEFT = [
-    "14 HORMUZ — TANKER HIT BY PROJECTILE (UKMTO) · OFFICIAL",
-    "15 GAZA — CIVIL DEFENCE CRIPPLED (AL JAZEERA) · REPORTED",
-    "16 IRAQ — ARMY IN MILITIA STRONGHOLD (REUTERS) · REPORTED",
-    "17 KRYVYI RIH — MISSILE KILLS 2, WOUNDS 47 (AP) · REPORTED",
-    "18 ESTONIA — BORDER WITH RUSSIA CLOSED (REUTERS) · REPORTED",
-    "19 LATVIA — SHUT EU BORDERS TO RUSSIANS (POLITICO) · REPORTED",
-    "20 TURKEY — IMAMOGLU DIPLOMA VOID (STRAITS TIMES) · REPORTED",
-    "21 MOGADISHU — RALLY BACKS UAE OUSTER (QNC NEWS) · REPORTED",
-    "22 S AFRICA — TRIBUTES FOR MLAMBO-NGCUKA, 71 (AFP) · REPORTED",
-    "23 S AFRICA — 600 WOMEN KILLED IN 3 MONTHS (BBC) · REPORTED",
-    "24 NIGERIA — BOAT SINKS, 4 DEAD (AL JAZEERA) · REPORTED",
+    "14 YEMEN — SAUDI STRIKES ON HODEIDAH, MOCHA (GEOPOLITIKI) · CLAIM",
+    "15 S AFRICA — TRIBUTES FOR MLAMBO-NGCUKA (PARLIAMENT) · REPORTED",
+    "16 KYIV — DRONES OVER KYIV AGAIN OVERNIGHT (KYIV CITY) · CLAIM",
+    "17 BRUSSELS — FRANCE SLAMS EU BUDGET PLAN (REUTERS) · REPORTED",
+    "18 LONDON — KATE FILM ON LIFE AFTER CANCER (REUTERS) · REPORTED",
+    "19 WASHINGTON — RECORD BLACK DEMOCRATS IN CONGRESS (REUTERS) · REPORTED",
+    "20 ENGLAND — MCKINNEY CALLED UP FOR S AFRICA (BBC) · REPORTED",
+    "21 AUSTRALIA — CHAUDHARY DOWNS ENGLAND IN T20 (BBC) · REPORTED",
+    "22 DURHAM — CLEMSON BEATS DUKE 20-10 (4.0 SPORTS) · REPORTED",
+    "23 BATON ROUGE — MANNING TD STUNS LSU (4.0 SPORTS) · REPORTED",
+    "24 GEORGIA — BULLDOGS ROUT MISSOURI 48-21 (4.0 SPORTS) · REPORTED",
 ]
 
 ALSO_RIGHT = [
-    "25 INDIA — TOXIC ALCOHOL KILLS 11 (STRAITS TIMES) · REPORTED",
-    "26 S KOREA — 111 CAUGHT CHEATING IN SUNEUNG (BBC) · REPORTED",
-    "27 AIR NIUGINI — EMERGENCY LANDING (STRAITS TIMES) · REPORTED",
-    "28 INDONESIA — 7.1M ACRES BURNED (NUSANTARA ATLAS) · REPORTED",
-    "29 BAYER — $7.25BN ROUNDUP DEAL APPROVED (BBC) · REPORTED",
-    "30 CERN — FIRST ULTRA-RARE DECAY FOUND (CERN) · OFFICIAL",
-    "31 VERSTAPPEN — ON POLE IN LAS VEGAS (BBC) · REPORTED",
-    "32 PALISADES — MAN CONVICTED OF ARSON (BBC) · REPORTED",
-    "33 TEXAS — SCREAMS IN HOUR-LONG EXECUTION (BBC) · REPORTED",
-    "34 TRUMP — DATA-CENTRE TAX THREAT (BBC) · REPORTED",
-    "35 NVIDIA — SEC PROBES ACCOUNTING (REUTERS) · REPORTED",
+    "25 AKRON — ZIPS RALLY PAST UMASS 34-33 (4.0 SPORTS) · REPORTED",
+    "26 DOHA — MALI 3 NEW ZEALAND 0 AT U-17 WC (FOF) · REPORTED",
+    "27 DOHA — MOROCCO 6 FIJI 0 AT U-17 WC (FOF) · REPORTED",
+    "28 DOHA — BELGIUM 3 VIETNAM 2 AT U-17 WC (FOF) · REPORTED",
+    "29 DOHA — SPAIN 5 CHINA 0 AT U-17 WC (FOF) · REPORTED",
+    "30 BILBAO — ESPANYOL WIN 1-0 AT ATHLETIC (SPORTSBRAIN24) · REPORTED",
+    "31 MUNICH — BAYERN HELD 1-1 BY COLOGNE (SPORTSBRAIN24) · REPORTED",
+    "32 TROYES — TROYES BEAT LE HAVRE 3-1 (SPORTSBRAIN24) · REPORTED",
+    "33 CONSTANTA — FARUL 2 U CLUJ 3 (SPORTSBRAIN24) · REPORTED",
+    "34 GILLINGHAM — GILLS 3 CREWE 3 IN LEAGUE TWO (SPORTRADAR) · REPORTED",
+    "35 NEWPORT — NEWPORT 2 SWINDON 0 (SPORTRADAR) · REPORTED",
 ]
 
-DATE_CHECK = ("DATE CHECK — LEFT OUT: ICJ MYANMAR GENOCIDE RULING "
-              "(19 NOV) · GTA VI $3.79BN DAY ONE (ANNOUNCED 20 NOV) · "
-              "KENYA TURKANA OIL DRILLING (20 NOV) · MAMDANI RIKERS PLAN "
-              "(20 NOV) · UGANDA EBOLA BAN (19 NOV) · KYIV BRIDGES STRIKE "
-              "(OVERNIGHT 20 NOV — ONLY THE POLAND LANDINGS, KRYVYI RIH, "
-              "THE TOLL OF 8 AND THE NATO RESPONSE ARE 21 NOV) · PERU "
-              "QUAKE STRUCK 19:09 LOCAL FRI (00:09 UTC SAT, REPORTED SAT) "
-              "· DARAXONRASIB CANCER PILL (DATA 19-20 NOV). NOT YET — "
-              "22 NOV: NEPAL PM'S INDIA VISIT (22-23 NOV) · BEPICOLOMBO "
-              "ORBITERS SEPARATE IN DECEMBER · COP31 DEAL STILL PENDING.")
+DATE_CHECK = ("DATE CHECK — LEFT OUT: KYIV BRIDGES STRIKE (OVERNIGHT "
+              "20 NOV — NOT 21 NOV) · RUSSIA'S 400-DRONE ATTACK ON "
+              "UKRAINE (FRI 20 NOV) · AI SELL-OFF, NASDAQ -5.28% (FRI "
+              "20 NOV CLOSE) · CYCLONE AKVAN LANDFALL (FRI 20 NOV) · "
+              "UK-EU DEALS (FRI 20 NOV, NOT SIGNED) · FBI/USDA HACK "
+              "FIRST REPORTED (FRI 20 NOV) · TRUMP-PUTIN-XI PRESSER "
+              "(FRI 20 NOV) · PERU QUAKE STRUCK 19:09 LOCAL FRI "
+              "(00:09 UTC SAT, REPORTED SAT) · DARAXONRASIB CANCER "
+              "PILL (DATA 19-20 NOV). NOT YET — 22 NOV: NEPAL PM'S "
+              "INDIA VISIT (22-23 NOV) · BEPICOLOMBO ORBITERS "
+              "SEPARATE IN DECEMBER · COP31 DEAL STILL PENDING.")
 
 FOOTER_1 = ("Every story here happened, or was first reported, on "
             "Saturday 21 November 2026.")
-FOOTER_2 = ("Sources: BBC · Reuters · AP · Al Jazeera · IMD · Xinhua · "
-            "UKMTO · CERN · AFP · Politico · Straits Times · QNC News · "
-            "Nusantara Atlas — Original drawings")
+FOOTER_2 = ("Sources: BBC · Reuters · AP · Al Jazeera · AFP · ESA · GFZ · "
+            "UKMTO · Geopolitiki · Friends of Football · Sportsbrain24 · "
+            "Sportradar · 4.0 Sports — Original drawings")
 
 
 def draw_list_col(cv, x, y, items, w=336, em=10, leading=12):
@@ -1561,8 +1568,8 @@ def draw():
     # ---- masthead: the date itself, huge smooth serif (rank 1 style) ----
     cv.vtext_centred(W // 2, 38, "Saturday 21 November 2026", 62, INK, 1.45)
     cv.vtext_centred(W // 2, 104,
-                     "Russian missiles land in Poland · AI sell-off sinks "
-                     "world markets · Houthis fire on Riyadh",
+                     "Houthis fire on Riyadh · NATO chief in Warsaw · "
+                     "Gaza floods swamp 70,000 tents",
                      13, GRAY, 1.0, italic=True)
     cv.hline(MARGIN, RIGHT, 124, INK, 3)
     cv.hline(MARGIN, RIGHT, 129, INK, 1)
@@ -1665,7 +1672,7 @@ def draw():
     draw_map(cv, MARGIN + 5, 783, cell=4)
     for i, line in enumerate(cv.vwrap(
             "EACH NUMBER MATCHES A STORY ON THIS PAGE. "
-            "10 IS IN ORBIT ROUND MERCURY — OFF THE MAP.", 7, 192)):
+            "6 IS IN ORBIT ROUND MERCURY — OFF THE MAP.", 7, 192)):
         cv.vtext(MARGIN, 884 + i * 9, line, 7, GRAY)
     draw_list_col(cv, 252, 778, ALSO_LEFT, w=360, em=9)
     draw_list_col(cv, 624, 778, ALSO_RIGHT, w=360, em=9)
