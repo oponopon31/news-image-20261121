@@ -8,15 +8,16 @@
 
   THE #1 FIX -- TRUE SERIF TYPOGRAPHY. The 5x7 and 7x9 bitmap fonts are
   GONE. Every letter on the page is drawn from a hand-built VECTOR
-  serif font: each glyph is a set of strokes (polylines and elliptical
-  arcs) in a 100-unit em, with thick vertical stems, thin horizontals,
+  serif font: each glyph is a filled OUTLINE (stem, bowl and bar
+  contours with real counters) in a 100-unit em, with thick vertical
+  stems, thin horizontals,
   diagonal contrast and serif feet, rasterised at SS=8 supersampling
   and blended by per-pixel coverage. Large text uses linear coverage
   (genuinely smooth grey edges); small text keeps a sqrt gamma so
   1 px strokes stay dark. That is what makes the masthead,
   headlines and body read as a real newspaper instead of pixel art:
   the shapes themselves are smooth curves, not a finer grid of blocks.
-  Bold weights are done by widening the strokes (masthead 1.45x,
+  Bold weights dilate the outlines (masthead 1.45x,
   headlines 1.3x); the subline is a sheared (italic) serif.
 
   Stdlib only, no network, no external files, no randomness: two runs
@@ -51,161 +52,318 @@ YELLOW = (255, 200, 60)
 BLUE = (30, 70, 160)
 
 # ------------------------------------------------------- vector serif ----
-# Glyph strokes in a 100-unit em: cap top y=0, baseline y=70,
-# descender bottom y=92, x-height top y=22.
-#   ('L', width, [(x, y), ...])      polyline stroke
-#   ('A', width, cx, cy, rx, ry, a0, a1)  elliptical arc, degrees;
-#       sampled from a0 to a1 (increasing if a1 > a0, else decreasing);
-#       0 deg = east, 90 deg = south (y grows downwards)
-#   ('D', radius, x, y)              filled dot
-def L(w, pts):
-    return ('L', w, pts)
+# TRUE OUTLINE SERIF (v2). Every glyph is a set of FILLED OUTLINE
+# contours in a 100-unit em (cap top y=0, baseline y=70, descender
+# y=92, x-height top y=22) -- not stroked centrelines. A contour is
+# a closed polygon; a glyph stroke ('P', [shape, ...]) is one or
+# more such contours, each filled separately so overlaps union.
+#   * _band(): a curved stroke as an outline -- outer arc + inner
+#     arc. Thickness follows the classic serif contrast: thick
+#     (9.6) where the curve runs vertically (east/west sides),
+#     thin (4.6) where it runs horizontally (top/bottom).
+#     A full 360-degree band IS a ring with a real counter.
+#   * _stem(): vertical stem with bracketed serif feet -- flared
+#     triangular feet, not rounded blobs.
+#   * _sband(): an S-curve as a band along a two-arc centreline,
+#     so S and s are one continuous stroke with a real middle
+#     crossing (the old two-arc S read as C; the old e was a
+#     120-degree partial bowl). The e bowl is now a 300-degree
+#     band plus a crossbar.
+# Bold weights dilate outlines in the renderer (shifted unions).
+def _ell_pts(cx, cy, rx, ry, a0, a1, step=6.0):
+    pts = []
+    if a1 >= a0:
+        n = max(2, int((a1 - a0) / step) + 1)
+        for i in range(n + 1):
+            a = math.radians(a0 + (a1 - a0) * i / n)
+            pts.append((cx + rx * math.cos(a), cy + ry * math.sin(a)))
+    else:
+        n = max(2, int((a0 - a1) / step) + 1)
+        for i in range(n + 1):
+            a = math.radians(a0 - (a0 - a1) * i / n)
+            pts.append((cx + rx * math.cos(a), cy + ry * math.sin(a)))
+    return pts
 
-def A(w, cx, cy, rx, ry, a0, a1):
-    return ('A', w, cx, cy, rx, ry, a0, a1)
+
+def _thick(a, tscale=1.0):
+    """Stroke thickness at ellipse angle a (0 deg = east, 90 = south):
+    thick at the sides, thin at top/bottom -- Times contrast."""
+    return (4.6 + 5.0 * abs(math.cos(math.radians(a)))) * tscale
+
+
+def _band(cx, cy, rx, ry, a0, a1, tscale=1.0):
+    """Filled outline of a curved stroke: outer arc + inner arc back.
+    a0 -> a1 increasing goes clockwise (through east, south, west,
+    north); decreasing goes the other way. A 360-degree band is a
+    closed ring with a real counter."""
+    full = abs(a1 - a0) >= 359.0
+    if a1 >= a0:
+        n = max(2, int((a1 - a0) / 6.0) + 1)
+        angs = [a0 + (a1 - a0) * i / n for i in range(n + 1)]
+    else:
+        n = max(2, int((a0 - a1) / 6.0) + 1)
+        angs = [a0 - (a0 - a1) * i / n for i in range(n + 1)]
+    outer = []
+    inner = []
+    m = len(angs)
+    for j, a in enumerate(angs):
+        r = math.radians(a)
+        t = _thick(a, tscale)
+        if not full:
+            d = min(j, m - 1 - j)
+            if d < 3:
+                t *= 0.78 + 0.22 * d / 3.0
+        outer.append((cx + rx * math.cos(r), cy + ry * math.sin(r)))
+        inner.append((cx + (rx - t) * math.cos(r),
+                      cy + (ry - t) * math.sin(r)))
+    return outer + inner[::-1]
+
+
+def _s_curve(cxT, cyT, rxT, ryT, cxB, cyB, rxB, ryB):
+    """Centreline of an S: top bowl arc (terminal at upper right,
+    over the top, down to the middle) + bottom bowl arc (middle,
+    round the right, under the bottom, terminal at lower left)."""
+    pts = _ell_pts(cxT, cyT, rxT, ryT, -35, -270)
+    pts += _ell_pts(cxB, cyB, rxB, ryB, -90, 145)[1:]
+    return pts
+
+
+def _sband(pts):
+    """Band along a polyline centreline; thickness from the normal's
+    x-component (thick where the stroke runs vertically)."""
+    n = len(pts)
+    left = []
+    right = []
+    for i, (x, y) in enumerate(pts):
+        x0, y0 = pts[max(0, i - 1)]
+        x1, y1 = pts[min(n - 1, i + 1)]
+        dx, dy = x1 - x0, y1 - y0
+        ln = (dx * dx + dy * dy) ** 0.5 or 1.0
+        tx, ty = dx / ln, dy / ln
+        nx, ny = -ty, tx
+        t = 4.6 + 5.0 * abs(nx)
+        d = min(i, n - 1 - i)
+        if d < 3:
+            t *= 0.8 + 0.2 * d / 3.0
+        left.append((x + nx * t / 2.0, y + ny * t / 2.0))
+        right.append((x - nx * t / 2.0, y - ny * t / 2.0))
+    return left + right[::-1]
+
+
+def _rect_c(x0, y0, x1, y1):
+    return [[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]]
+
+
+def _stem_c(x, y0, y1, w=9.0, top=True, bot=True, foot=6.0, br=5.0):
+    """Vertical stem with bracketed serif feet (flared feet)."""
+    x0 = x - w / 2.0
+    x1 = x + w / 2.0
+    pts = []
+    if top:
+        pts.append((x0 - foot, y0))
+        pts.append((x1 + foot, y0))
+        pts.append((x1, y0 + br))
+    else:
+        pts.append((x0, y0))
+        pts.append((x1, y0))
+    if bot:
+        pts.append((x1, y1 - br))
+        pts.append((x1 + foot, y1))
+        pts.append((x0 - foot, y1))
+        pts.append((x0, y1 - br))
+    else:
+        pts.append((x1, y1))
+        pts.append((x0, y1))
+    if top:
+        pts.append((x0, y0 + br))
+    return [pts]
+
+
+def _diag_c(x0, y0, x1, y1, w=9.0):
+    dx, dy = x1 - x0, y1 - y0
+    ln = (dx * dx + dy * dy) ** 0.5
+    nx, ny = -dy / ln * w / 2.0, dx / ln * w / 2.0
+    return [[(x0 + nx, y0 + ny), (x1 + nx, y1 + ny),
+             (x1 - nx, y1 - ny), (x0 - nx, y0 - ny)]]
+
+
+def _band_c(cx, cy, rx, ry, a0, a1, tscale=1.0):
+    return [_band(cx, cy, rx, ry, a0, a1, tscale)]
+
+
+def _s_c(cxT, cyT, rxT, ryT, cxB, cyB, rxB, ryB):
+    return [_sband(_s_curve(cxT, cyT, rxT, ryT, cxB, cyB, rxB, ryB))]
+
+
+def P(*shapes):
+    """A filled-outline glyph stroke: list of shapes (contours)."""
+    return ('P', list(shapes))
+
 
 def D(r, x, y):
     return ('D', r, x, y)
 
-def HB(x0, x1, y, w):
-    return ('L', w, [(x0, y), (x1, y)])
-
-def V(x, y0, y1, w):
-    """Vertical stem with serif feet top and bottom."""
-    return [('L', w, [(x, y0), (x, y1)]),
-            ('L', 4, [(x - 7, y0 + 2), (x + 7, y0 + 2)]),
-            ('L', 4, [(x - 7, y1 - 2), (x + 7, y1 - 2)])]
 
 GLYPHS = {
     # ---- uppercase: cap top 0, baseline 70 ----
-    'A': (68, [L(11, [(6, 70), (34, 2)]), L(11, [(34, 2), (62, 70)]),
-              L(6, [(18, 46), (50, 46)]),
-              HB(0, 14, 68, 4), HB(54, 68, 68, 4)]),
-    'B': (52, [*V(10, 2, 68, 13),
-               A(9, 10, 20, 26, 16, -90, 90),
-               A(9, 10, 53, 28, 17, -90, 90)]),
-    'C': (62, [A(10, 34, 35, 30, 35, 300, 60),
-               HB(44, 60, 4, 4), HB(44, 60, 66, 4)]),
-    'D': (58, [*V(10, 2, 68, 13), A(10, 10, 35, 42, 35, -90, 90)]),
-    'E': (54, [*V(10, 2, 68, 13), HB(10, 52, 4, 6), HB(10, 44, 36, 6),
-               HB(10, 54, 66, 6)]),
-    'F': (52, [*V(10, 2, 68, 13), HB(10, 50, 4, 6), HB(10, 42, 36, 6)]),
-    'G': (62, [A(10, 34, 35, 30, 35, 300, 60),
-               HB(34, 58, 44, 6), L(6, [(56, 44), (56, 66)])]),
-    'H': (68, [*V(10, 2, 68, 13), *V(58, 2, 68, 13), HB(16, 52, 36, 7)]),
-    'I': (46, [*V(23, 2, 68, 13), HB(10, 36, 4, 5), HB(10, 36, 66, 5)]),
-    'J': (60, [L(11, [(48, 2), (48, 54)]),
-               A(10, 30, 54, 20, 16, 0, 180), HB(34, 62, 4, 5)]),
-    'K': (60, [*V(10, 2, 68, 13), L(10, [(22, 38), (54, 4)]),
-               L(10, [(28, 32), (56, 68)])]),
-    'L': (56, [*V(10, 2, 68, 13), HB(10, 56, 66, 6)]),
-    'M': (70, [*V(8, 2, 68, 12), *V(62, 2, 68, 12),
-               L(9, [(14, 4), (35, 44)]), L(9, [(35, 44), (56, 4)])]),
-    'N': (66, [*V(8, 2, 68, 12), *V(58, 2, 68, 12),
-               L(9, [(14, 4), (52, 66)])]),
-    'O': (68, [A(11, 34, 35, 28, 35, 0, 360)]),
-    'P': (52, [*V(10, 2, 68, 13), A(9, 10, 19, 26, 19, -90, 90),
-               HB(10, 34, 38, 6)]),
-    'Q': (68, [A(11, 34, 35, 28, 35, 0, 360), L(8, [(44, 52), (62, 72)])]),
-    'R': (54, [*V(10, 2, 68, 13), A(9, 10, 19, 26, 19, -90, 90),
-               HB(10, 34, 38, 6), L(9, [(30, 38), (56, 68)])]),
-    'S': (56, [A(10, 28, 20, 24, 17, 180, 360),
-               A(10, 28, 50, 24, 17, 0, 180)]),
-    'T': (64, [HB(4, 60, 4, 7), *V(32, 4, 68, 12)]),
-    'U': (66, [L(12, [(8, 2), (8, 52)]), L(12, [(58, 2), (58, 52)]),
-               A(11, 33, 50, 25, 20, 0, 180),
-               HB(0, 16, 4, 4), HB(50, 66, 4, 4)]),
-    'V': (62, [L(11, [(6, 2), (31, 68)]), L(11, [(31, 68), (56, 2)]),
-               HB(0, 12, 4, 4), HB(50, 62, 4, 4)]),
-    'W': (72, [L(10, [(4, 2), (18, 68)]), L(10, [(18, 68), (36, 14)]),
-               L(10, [(36, 14), (54, 68)]), L(10, [(54, 68), (68, 2)])]),
-    'X': (62, [L(10, [(8, 2), (54, 68)]), L(10, [(54, 2), (8, 68)]),
-               HB(2, 14, 4, 4), HB(48, 60, 4, 4),
-               HB(2, 14, 66, 4), HB(48, 60, 66, 4)]),
-    'Y': (62, [L(11, [(6, 2), (31, 36)]), L(11, [(56, 2), (31, 36)]),
-               *V(31, 36, 68, 12), HB(0, 12, 4, 4), HB(50, 62, 4, 4)]),
-    'Z': (58, [HB(4, 54, 4, 7), L(9, [(52, 6), (8, 64)]), HB(4, 54, 66, 7)]),
+    'A': (68, [P(_diag_c(6, 70, 34, 2, 9), _diag_c(34, 2, 62, 70, 7),
+                  _rect_c(18, 44, 50, 49), _rect_c(0, 66, 14, 70),
+                  _rect_c(54, 66, 68, 70))]),
+    'B': (54, [P(_stem_c(10, 2, 68),
+                  _band_c(10, 19, 27, 17.5, -90, 90),
+                  _band_c(10, 52, 29, 16.5, -90, 90),
+                  _rect_c(10, 33, 38, 38))]),
+    'C': (62, [P(_band_c(32, 35, 29, 35, 50, 310))]),
+    'D': (60, [P(_stem_c(10, 2, 68), _band_c(10, 35, 44, 35, -90, 90))]),
+    'E': (54, [P(_stem_c(10, 2, 68), _rect_c(10, 2, 50, 7),
+                  _rect_c(10, 33, 42, 38), _rect_c(10, 63, 52, 68))]),
+    'F': (52, [P(_stem_c(10, 2, 68), _rect_c(10, 2, 50, 7),
+                  _rect_c(10, 33, 42, 38))]),
+    'G': (62, [P(_band_c(32, 35, 29, 35, 50, 310),
+                  _rect_c(30, 42, 58, 47), _rect_c(52, 42, 58, 68))]),
+    'H': (68, [P(_stem_c(10, 2, 68), _stem_c(58, 2, 68),
+                  _rect_c(16, 33, 52, 38))]),
+    'I': (46, [P(_stem_c(23, 2, 68), _rect_c(8, 2, 38, 7),
+                  _rect_c(8, 63, 38, 68))]),
+    'J': (58, [P(_rect_c(34, 2, 60, 7), _rect_c(43, 2, 53, 54),
+                  _band_c(30, 52, 18, 16, 0, 180))]),
+    'K': (60, [P(_stem_c(10, 2, 68), _diag_c(22, 38, 54, 4, 8),
+                  _diag_c(28, 32, 56, 68, 9), _rect_c(46, 2, 60, 6),
+                  _rect_c(48, 66, 62, 70))]),
+    'L': (56, [P(_stem_c(10, 2, 68), _rect_c(10, 63, 54, 68))]),
+    'M': (72, [P(_stem_c(8, 2, 68), _stem_c(64, 2, 68),
+                  _diag_c(14, 4, 36, 46, 8), _diag_c(36, 46, 58, 4, 8))]),
+    'N': (66, [P(_stem_c(8, 2, 68), _stem_c(58, 2, 68),
+                  _diag_c(14, 4, 52, 66, 8))]),
+    'O': (68, [P(_band_c(34, 35, 29, 35, 0, 360))]),
+    'P': (54, [P(_stem_c(10, 2, 68), _band_c(10, 19, 27, 17.5, -90, 90),
+                  _rect_c(10, 33, 36, 38))]),
+    'Q': (68, [P(_band_c(34, 35, 29, 35, 0, 360),
+                  _diag_c(44, 52, 62, 72, 7))]),
+    'R': (56, [P(_stem_c(10, 2, 68), _band_c(10, 19, 27, 17.5, -90, 90),
+                  _rect_c(10, 33, 36, 38), _diag_c(30, 36, 56, 68, 9))]),
+    # S: one continuous band, top terminal upper right, middle
+    # crossing, bottom terminal lower left -- unmistakably S, not C.
+    'S': (58, [P(_s_c(29, 20, 24, 17, 29, 50, 24, 17))]),
+    'T': (64, [P(_rect_c(4, 2, 60, 7), _stem_c(32, 4, 68, 10))]),
+    'U': (66, [P(_stem_c(8, 2, 52, bot=False),
+                  _stem_c(58, 2, 52, bot=False),
+                  _band_c(33, 50, 25, 20, 0, 180))]),
+    'V': (62, [P(_diag_c(6, 2, 31, 68, 9), _diag_c(31, 68, 56, 2, 9),
+                  _rect_c(0, 2, 12, 6), _rect_c(50, 2, 62, 6))]),
+    'W': (74, [P(_diag_c(4, 2, 18, 68, 8), _diag_c(18, 68, 36, 14, 8),
+                  _diag_c(36, 14, 54, 68, 8), _diag_c(54, 68, 70, 2, 8))]),
+    'X': (62, [P(_diag_c(8, 2, 54, 68, 9), _diag_c(54, 2, 8, 68, 9),
+                  _rect_c(2, 2, 14, 6), _rect_c(48, 2, 60, 6),
+                  _rect_c(2, 66, 14, 70), _rect_c(48, 66, 60, 70))]),
+    'Y': (62, [P(_diag_c(6, 2, 31, 36, 9), _diag_c(56, 2, 31, 36, 9),
+                  _stem_c(31, 36, 68, 10), _rect_c(0, 2, 12, 6),
+                  _rect_c(50, 2, 62, 6))]),
+    'Z': (58, [P(_rect_c(4, 2, 54, 7), _diag_c(52, 6, 8, 64, 8),
+                  _rect_c(4, 63, 54, 68))]),
     # ---- lowercase: x-height top 22, baseline 70, descender 92 ----
-    'a': (54, [A(9, 26, 48, 20, 24, 0, 360), *V(46, 20, 68, 9)]),
-    'b': (56, [*V(8, 0, 68, 11), A(9, 28, 48, 20, 22, 0, 360)]),
-    'c': (50, [A(9, 27, 46, 20, 24, 300, 60)]),
-    'd': (56, [A(9, 26, 48, 20, 22, 0, 360), *V(46, 0, 68, 11)]),
-    'e': (52, [A(9, 26, 46, 20, 24, 300, 60), HB(6, 46, 44, 6)]),
-    'f': (46, [L(10, [(26, 12), (26, 68)]),
-               A(10, 26, 14, 16, 14, 180, 300), HB(10, 42, 34, 6)]),
-    'g': (54, [A(9, 26, 46, 20, 22, 0, 360), *V(46, 20, 80, 9),
-               A(9, 30, 80, 16, 12, 0, 180)]),
-    'h': (56, [*V(8, 0, 68, 11), A(10, 28, 46, 20, 24, 180, 360),
-               L(10, [(48, 46), (48, 68)])]),
-    'i': (30, [L(10, [(15, 22), (15, 68)]), D(6, 15, 9), HB(8, 22, 66, 4)]),
-    'j': (34, [L(10, [(19, 22), (19, 78)]),
-               A(10, 19, 78, 11, 12, 0, 180), D(6, 19, 9)]),
-    'k': (54, [*V(8, 0, 68, 11), L(9, [(20, 40), (44, 22)]),
-               L(9, [(26, 36), (48, 68)])]),
-    'l': (30, [*V(15, 0, 68, 11), HB(8, 22, 66, 4)]),
-    'm': (78, [L(10, [(6, 22), (6, 68)]),
-               A(9, 22, 44, 16, 22, 180, 360), L(9, [(38, 44), (38, 68)]),
-               A(9, 54, 44, 16, 22, 180, 360), L(9, [(70, 44), (70, 68)])]),
-    'n': (56, [*V(8, 22, 68, 10), A(10, 28, 46, 20, 24, 180, 360),
-               L(10, [(48, 46), (48, 68)])]),
-    'o': (52, [A(10, 26, 46, 20, 24, 0, 360)]),
-    'p': (56, [*V(8, 22, 90, 11), A(9, 28, 48, 20, 22, 0, 360)]),
-    'q': (56, [A(9, 26, 48, 20, 22, 0, 360), *V(46, 22, 90, 11)]),
-    'r': (46, [*V(8, 22, 68, 10), A(9, 24, 36, 16, 14, 180, 360)]),
-    's': (50, [A(9, 25, 34, 18, 13, 180, 360),
-               A(9, 25, 58, 18, 13, 0, 180)]),
-    't': (44, [L(10, [(22, 6), (22, 64)]),
-               A(9, 32, 62, 12, 10, 90, 180), HB(8, 36, 32, 6)]),
-    'u': (50, [L(10, [(8, 22), (8, 56)]), L(10, [(42, 22), (42, 56)]),
-               A(10, 25, 54, 17, 16, 0, 180)]),
-    'v': (50, [L(9, [(6, 22), (25, 68)]), L(9, [(25, 68), (44, 22)])]),
-    'w': (52, [L(9, [(4, 22), (13, 68)]), L(9, [(13, 68), (25, 30)]),
-               L(9, [(25, 30), (37, 68)]), L(9, [(37, 68), (48, 22)])]),
-    'x': (50, [L(9, [(6, 22), (44, 68)]), L(9, [(44, 22), (6, 68)])]),
-    'y': (50, [L(9, [(6, 22), (25, 58)]), L(9, [(44, 22), (25, 58)]),
-               L(9, [(25, 58), (13, 90)])]),
-    'z': (52, [HB(6, 46, 24, 6), L(8, [(44, 26), (8, 66)]), HB(6, 46, 66, 6)]),
+    'a': (54, [P(_band_c(26, 48, 20, 22, 0, 360),
+                  _band_c(26, 36, 20, 14, 180, 360),
+                  _stem_c(46, 20, 68, 8, top=False))]),
+    'b': (56, [P(_stem_c(8, 0, 68, 10), _band_c(28, 48, 20, 22, 0, 360))]),
+    'c': (50, [P(_band_c(27, 46, 20, 24, 50, 310))]),
+    'd': (56, [P(_band_c(26, 48, 20, 22, 0, 360),
+                  _stem_c(46, 0, 68, 10))]),
+    # e: nearly-full bowl (300-degree band, gap at upper right)
+    # plus a crossbar -- unmistakably e, not a partial bowl.
+    'e': (52, [P(_band_c(26, 46, 20, 24, -5, 320),
+                  _rect_c(6, 40, 46, 46), _rect_c(41, 31, 47, 46))]),
+    'f': (46, [P(_stem_c(26, 12, 68, 9, top=False),
+                  _band_c(26, 14, 15, 14, 180, 320),
+                  _rect_c(10, 32, 42, 37))]),
+    'g': (54, [P(_band_c(26, 46, 20, 22, 0, 360),
+                  _stem_c(46, 20, 80, 8, top=False, bot=False),
+                  _band_c(30, 80, 16, 12, 0, 180))]),
+    'h': (56, [P(_stem_c(8, 0, 68, 10), _band_c(28, 46, 20, 24, 180, 360),
+                  _rect_c(43, 46, 53, 68))]),
+    'i': (30, [P(_stem_c(15, 22, 68, 9)), D(5.5, 15, 9)]),
+    'j': (34, [P(_stem_c(19, 22, 78, 9, top=False, bot=False),
+                  _band_c(19, 78, 11, 12, 0, 180)), D(5.5, 19, 9)]),
+    'k': (54, [P(_stem_c(8, 0, 68, 10), _diag_c(20, 40, 44, 22, 8),
+                  _diag_c(26, 36, 48, 68, 9))]),
+    'l': (30, [P(_stem_c(15, 0, 68, 10))]),
+    'm': (78, [P(_stem_c(6, 22, 68, 9, top=False),
+                  _band_c(22, 44, 16, 22, 180, 360),
+                  _rect_c(33, 44, 43, 68),
+                  _band_c(54, 44, 16, 22, 180, 360),
+                  _rect_c(65, 44, 75, 68))]),
+    'n': (56, [P(_stem_c(8, 22, 68, 9, top=False),
+                  _band_c(28, 46, 20, 24, 180, 360),
+                  _rect_c(43, 46, 53, 68))]),
+    'o': (52, [P(_band_c(26, 46, 20, 24, 0, 360))]),
+    'p': (56, [P(_stem_c(8, 22, 90, 10, top=False),
+                  _band_c(28, 48, 20, 22, 0, 360))]),
+    'q': (56, [P(_band_c(26, 48, 20, 22, 0, 360),
+                  _stem_c(46, 22, 90, 10, top=False))]),
+    'r': (46, [P(_stem_c(8, 22, 68, 9, top=False),
+                  _band_c(24, 36, 16, 14, 180, 360))]),
+    's': (50, [P(_s_c(25, 34, 18, 12, 25, 58, 18, 12))]),
+    't': (44, [P(_stem_c(22, 6, 64, 9, top=False),
+                  _band_c(34, 60, 12, 12, 90, 180),
+                  _rect_c(8, 32, 36, 37))]),
+    'u': (52, [P(_stem_c(8, 22, 56, 9, top=False, bot=False),
+                  _stem_c(44, 22, 56, 9, top=False, bot=False),
+                  _band_c(26, 54, 18, 16, 0, 180))]),
+    'v': (50, [P(_diag_c(6, 22, 25, 68, 8), _diag_c(25, 68, 44, 22, 8))]),
+    'w': (54, [P(_diag_c(4, 22, 13, 68, 8), _diag_c(13, 68, 25, 30, 8),
+                  _diag_c(25, 30, 37, 68, 8), _diag_c(37, 68, 50, 22, 8))]),
+    'x': (50, [P(_diag_c(6, 22, 44, 68, 8), _diag_c(44, 22, 6, 68, 8))]),
+    'y': (50, [P(_diag_c(6, 22, 25, 58, 8), _diag_c(44, 22, 25, 58, 8),
+                  _diag_c(25, 58, 13, 90, 8))]),
+    'z': (52, [P(_rect_c(6, 22, 46, 27), _diag_c(44, 26, 8, 66, 8),
+                  _rect_c(6, 65, 46, 70))]),
     # ---- digits: cap top 0, baseline 70 ----
-    '0': (56, [A(11, 28, 35, 24, 35, 0, 360)]),
-    '1': (48, [L(9, [(10, 26), (28, 4)]), *V(28, 2, 68, 11),
-               HB(12, 44, 66, 5)]),
-    '2': (56, [A(9, 28, 20, 22, 18, 180, 360), L(9, [(50, 20), (10, 64)]),
-               HB(8, 50, 66, 6)]),
-    '3': (56, [A(10, 28, 19, 20, 16, 220, 400),
-               A(10, 28, 52, 22, 17, 320, 540)]),
-    '4': (54, [L(9, [(38, 2), (10, 48)]), HB(6, 50, 48, 7),
-               *V(38, 2, 68, 11)]),
-    '5': (54, [HB(10, 48, 4, 6), L(10, [(10, 4), (10, 34)]),
-               A(10, 30, 50, 20, 17, 320, 540)]),
-    '6': (56, [A(10, 28, 46, 22, 24, 0, 360), L(9, [(38, 26), (50, 6)])]),
-    '7': (54, [HB(8, 50, 4, 7), L(10, [(48, 6), (20, 68)])]),
-    '8': (52, [A(9, 26, 20, 18, 16, 0, 360),
-               A(9, 26, 51, 20, 19, 0, 360)]),
-    '9': (56, [A(10, 28, 24, 22, 22, 0, 360), L(9, [(46, 28), (32, 68)])]),
+    '0': (56, [P(_band_c(28, 35, 23, 35, 0, 360))]),
+    '1': (48, [P(_diag_c(10, 26, 28, 4, 7), _stem_c(28, 2, 68, 10),
+                  _rect_c(12, 63, 44, 68))]),
+    '2': (56, [P(_band_c(28, 20, 22, 18, 180, 360),
+                  _diag_c(50, 20, 10, 64, 8), _rect_c(8, 63, 50, 68))]),
+    '3': (56, [P(_band_c(28, 19, 20, 16, 200, 420),
+                  _band_c(28, 52, 22, 17, -60, 140))]),
+    '4': (54, [P(_diag_c(38, 2, 10, 48, 8), _rect_c(6, 43, 50, 48),
+                  _stem_c(38, 2, 68, 10))]),
+    '5': (54, [P(_rect_c(10, 2, 48, 7), _rect_c(10, 4, 17, 36),
+                  _rect_c(10, 31, 42, 36),
+                  _band_c(30, 50, 20, 17, -75, 140))]),
+    '6': (56, [P(_band_c(28, 46, 22, 24, 0, 360),
+                  _band_c(30, 26, 20, 22, -30, -220))]),
+    '7': (54, [P(_rect_c(8, 2, 50, 7), _diag_c(48, 6, 20, 68, 9))]),
+    '8': (52, [P(_band_c(26, 20, 18, 16, 0, 360),
+                  _band_c(26, 51, 20, 19, 0, 360))]),
+    '9': (56, [P(_band_c(28, 24, 22, 22, 0, 360),
+                  _band_c(28, 44, 22, 24, 0, 130))]),
     # ---- punctuation ----
     ' ': (28, []),
     '.': (20, [D(5, 10, 66)]),
-    ',': (20, [D(5, 10, 66), L(6, [(10, 66), (4, 80)])]),
+    ',': (20, [D(5, 10, 66), P(_diag_c(10, 66, 4, 80, 6))]),
     ':': (20, [D(5, 10, 26), D(5, 10, 58)]),
-    ';': (20, [D(5, 10, 26), D(5, 10, 58), L(6, [(10, 58), (4, 72)])]),
-    '-': (48, [HB(8, 40, 36, 6)]),
-    '/': (48, [L(8, [(38, 2), (10, 68)])]),
-    '(': (30, [A(7, 34, 35, 20, 35, 250, 110)]),
-    ')': (30, [A(7, 8, 35, 20, 35, 290, 70)]),
-    '%': (64, [A(7, 18, 18, 10, 10, 0, 360),
-               A(7, 46, 52, 10, 10, 0, 360), L(7, [(52, 4), (12, 66)])]),
-    '&': (56, [A(7, 26, 24, 13, 12, 0, 360), L(7, [(38, 14), (14, 68)]),
-               A(7, 26, 54, 16, 14, 0, 180)]),
-    '+': (48, [HB(8, 40, 34, 7), L(7, [(24, 16), (24, 52)])]),
-    '$': (52, [A(9, 26, 22, 16, 12, 180, 360),
-               A(9, 26, 48, 16, 12, 0, 180), L(6, [(26, 2), (26, 68)])]),
-    "'": (20, [L(7, [(12, 2), (8, 20)])]),
-    '"': (36, [L(7, [(10, 2), (6, 20)]), L(7, [(26, 2), (22, 20)])]),
-    '!': (20, [L(10, [(10, 2), (10, 52)]), D(5, 10, 64)]),
-    '?': (52, [A(9, 26, 18, 18, 16, 200, 380), L(9, [(42, 26), (28, 44)]),
-               D(5, 28, 62)]),
-    '=': (48, [HB(8, 40, 26, 5), HB(8, 40, 46, 5)]),
+    ';': (20, [D(5, 10, 26), D(5, 10, 58), P(_diag_c(10, 58, 4, 72, 6))]),
+    '-': (48, [P(_rect_c(8, 33, 40, 39))]),
+    '/': (48, [P(_diag_c(38, 2, 10, 68, 7))]),
+    '(': (30, [P(_band_c(34, 35, 20, 35, 110, 250))]),
+    ')': (30, [P(_band_c(-4, 35, 20, 35, -70, 70))]),
+    '%': (64, [P(_band_c(18, 18, 10, 10, 0, 360, 0.55),
+                  _band_c(46, 52, 10, 10, 0, 360, 0.55),
+                  _diag_c(52, 4, 12, 66, 6))]),
+    '&': (56, [P(_band_c(26, 24, 13, 12, 0, 360, 0.7),
+                  _diag_c(38, 14, 14, 68, 6),
+                  _band_c(26, 54, 16, 14, 0, 180))]),
+    '+': (48, [P(_rect_c(8, 31, 40, 37), _rect_c(21, 16, 27, 52))]),
+    '$': (52, [P(_s_c(26, 22, 20, 15, 26, 48, 20, 15),
+                  _rect_c(23, 0, 29, 70))]),
+    "'": (20, [P(_diag_c(12, 2, 8, 20, 6))]),
+    '"': (36, [P(_diag_c(10, 2, 6, 20, 6), _diag_c(26, 2, 22, 20, 6))]),
+    '!': (20, [P(_rect_c(7, 2, 13, 52)), D(5, 10, 64)]),
+    '?': (52, [P(_band_c(26, 18, 18, 16, 200, 420),
+                  _diag_c(42, 26, 28, 44, 8)), D(5, 28, 62)]),
+    '=': (48, [P(_rect_c(8, 24, 40, 29), _rect_c(8, 44, 40, 49))]),
     '•': (24, [D(6, 12, 40)]),
+    '·': (20, [D(5, 10, 36)]),
 }
 
 # characters normalised before lookup
@@ -335,6 +493,21 @@ def _render_glyph(ch, em, weight, italic):
         elif kind == 'D':
             cx, cy = tx(st[2], st[3])
             _fill_circle_mask(mask, mw, mh, cx, cy, st[1] * weight * k)
+        elif kind == 'P':
+            # Filled-outline glyph: each shape is one closed contour
+            # (a band, a stem, a bar, ...). Shapes are filled one by
+            # one, so overlaps union instead of cutting holes. Bold
+            # weights dilate the outline by unioning shifted copies.
+            e = (weight - 1.0) * 5.0 * k
+            contours = [[tx(x, y) for x, y in contour]
+                        for shape in st[1] for contour in shape]
+            shifts = [(0.0, 0.0)] if e <= 0.01 else (
+                (0.0, 0.0), (-e, 0.0), (e, 0.0), (0.0, -e), (0.0, e))
+            for dx, dy in shifts:
+                for contour in contours:
+                    _fill_poly_mask(mask, mw, mh,
+                                    [(px + dx, py + dy)
+                                     for px, py in contour])
     # downsample SSxSS -> coverage; collect inked output pixels
     out_w = (mw + SS - 1) // SS
     out_h = (mh + SS - 1) // SS
