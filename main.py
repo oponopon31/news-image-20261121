@@ -1286,6 +1286,37 @@ def pic_fire(cv, ox, oy, w, h):
     cv.hline(ox, ox + w - 1, base, INK, 2)
 
 
+def pic_aid(cv, ox, oy, w, h):
+    # Gaza City street at night: aid van on a road, missile burst above.
+    grad_v(cv, ox, oy, w, h, (42, 46, 72), (22, 24, 38))
+    # buildings left and right, lit windows
+    cv.fill_rect(ox, oy + int(h * 0.25), int(w * 0.16), int(h * 0.75),
+                 (56, 56, 72))
+    cv.fill_rect(ox + int(w * 0.84), oy + int(h * 0.18), int(w * 0.16),
+                 int(h * 0.82), (50, 50, 66))
+    for bx, by in ((0.03, 0.35), (0.08, 0.45), (0.88, 0.30), (0.93, 0.42)):
+        cv.fill_rect(ox + int(w * bx), oy + int(h * by), 5, 6, YELLOW)
+    # road + centre dashes
+    cv.fill_rect(ox, oy + int(h * 0.78), w, int(h * 0.22), (72, 72, 78))
+    cv.hline(ox, ox + w - 1, oy + int(h * 0.78), INK, 2)
+    for dx in range(ox + 8, ox + w - 10, 26):
+        cv.fill_rect(dx, oy + int(h * 0.88), 12, 2, PAPER)
+    # white aid van
+    vx, vy = ox + int(w * 0.34), oy + int(h * 0.52)
+    vw, vh = int(w * 0.34), int(h * 0.26)
+    cv.fill_rect(vx, vy, vw, vh, (226, 221, 206))
+    cv.fill_rect(vx + 6, vy + 5, int(vw * 0.45), int(vh * 0.4),
+                 (92, 122, 152))
+    cv.fill_rect(vx + int(vw * 0.62), vy + 5, int(vw * 0.28),
+                 int(vh * 0.4), (92, 122, 152))
+    cv.fill_circle(vx + int(vw * 0.22), vy + vh, 6, INK)
+    cv.fill_circle(vx + int(vw * 0.78), vy + vh, 6, INK)
+    # missile burst above the van
+    cv.star(ox + int(w * 0.51), oy + int(h * 0.36), 17, (245, 140, 40), 3)
+    cv.fill_circle(ox + int(w * 0.51), oy + int(h * 0.36), 8,
+                   (250, 200, 60))
+
+
 def pic_plane(cv, ox, oy, w, h):
     grad_v(cv, ox, oy, w, h, (150, 190, 225), (205, 225, 240))
     for cx0, cy0, r0 in ((0.12, 0.14, 7), (0.20, 0.11, 9), (0.70, 0.10, 6),
@@ -1382,7 +1413,7 @@ LEGEND = ("HOW WE CHECKED — CONFIRMED = 2+ OUTLETS · OFFICIAL = ON THE "
 
 STATS = [
     ("3", "MISSILES INTERCEPTED", "OVER RIYADH"),
-    ("70,000", "TENTS FLOODED", "IN GAZA'S FIRST STORM"),
+    ("8", "RIYADH EMERGENCY", "ALERTS IN 24 HOURS"),
     ("6.8", "MAGNITUDE OF THE PERU", "AND BANDA SEA QUAKES"),
     ("2", "TANKERS HIT NEAR", "THE STRAIT OF HORMUZ"),
     ("146", "PEOPLE SAFE AFTER", "AIR NIUGINI DIVERSION"),
@@ -1427,14 +1458,14 @@ TOP3 = [
               "missiles and a drone came down in Poland, said the "
               "alliance will defend every inch of Polish "
               "territory. (Reuters)"),
-    dict(pic=pic_cyclone, tag="GAZA", tag2="70,000 TENTS FLOODED",
-         cap="CONFIRMED · AL JAZEERA", w=304, pic_h=102, head_em=19,
-         kicker="3 GAZA — FLOODS",
-         head="Gaza floods swamp 70,000 tents",
-         body="The first winter storm flooded about 70,000 tents "
-              "and left some 350,000 people exposed, as heavy rain "
-              "fell late on Friday into Saturday. Five were killed, "
-              "including four children. (Al Jazeera)"),
+    dict(pic=pic_aid, tag="GAZA", tag2="AID VEHICLE HIT",
+         cap="REPORTED · REUTERS", w=304, pic_h=102, head_em=19,
+         kicker="3 GAZA — AID STRIKE",
+         head="Strike kills three in Gaza aid vehicle",
+         body="An Israeli strike killed three Palestinians in a "
+              "vehicle carrying food and papers for the World "
+              "Central Kitchen charity in Gaza City on Saturday, "
+              "the health ministry said. (Reuters)"),
 ]
 
 MID5 = [
@@ -1516,14 +1547,15 @@ ALSO_RIGHT = [
 ]
 
 DATE_CHECK = ("DATE CHECK — LEFT OUT: KYIV BRIDGES STRIKE (OVERNIGHT "
-              "20 NOV — NOT 21 NOV) · RUSSIA'S 400-DRONE ATTACK ON "
-              "UKRAINE (FRI 20 NOV) · AI SELL-OFF, NASDAQ -5.28% (FRI "
-              "20 NOV CLOSE) · CYCLONE AKVAN LANDFALL (FRI 20 NOV) · "
+              "20 NOV — NOT 21 NOV) · RUSSIA'S 400-DRONE ATTACK "
+              "(FRI 20 NOV) · AI SELL-OFF -5.28% (FRI 20 NOV) · "
+              "CYCLONE AKVAN LANDFALL (FRI 20 NOV) · "
               "UK-EU DEALS (FRI 20 NOV, NOT SIGNED) · FBI/USDA HACK "
               "FIRST REPORTED (FRI 20 NOV) · TRUMP-PUTIN-XI PRESSER "
-              "(FRI 20 NOV) · PERU QUAKE STRUCK 19:09 LOCAL FRI "
-              "(00:09 UTC SAT, REPORTED SAT) · DARAXONRASIB CANCER "
-              "PILL (DATA 19-20 NOV). NOT YET — 22 NOV: NEPAL PM'S "
+              "(FRI 20 NOV) · PERU QUAKE 19:09 FRI "
+              "(00:09 UTC SAT) · DARAXONRASIB CANCER "
+              "PILL (DATA 19-20 NOV) · GAZA FLOODS (FIRST STORM 7 NOV). "
+              "NOT YET — 22 NOV: NEPAL PM'S "
               "INDIA VISIT (22-23 NOV) · BEPICOLOMBO ORBITERS "
               "SEPARATE IN DECEMBER · COP31 DEAL STILL PENDING.")
 
@@ -1569,7 +1601,7 @@ def draw():
     cv.vtext_centred(W // 2, 38, "Saturday 21 November 2026", 62, INK, 1.45)
     cv.vtext_centred(W // 2, 104,
                      "Houthis fire on Riyadh · NATO chief in Warsaw · "
-                     "Gaza floods swamp 70,000 tents",
+                     "Strike kills three in Gaza aid vehicle",
                      13, GRAY, 1.0, italic=True)
     cv.hline(MARGIN, RIGHT, 124, INK, 3)
     cv.hline(MARGIN, RIGHT, 129, INK, 1)
