@@ -1570,8 +1570,9 @@ DATE_CHECK = ("DATE CHECK — LEFT OUT: KYIV BRIDGES STRIKE (OVERNIGHT "
 FOOTER_1 = ("Every story here happened, or was first reported, on "
             "Saturday 21 November 2026.")
 FOOTER_2 = ("Sources: BBC · Reuters · AP · Al Jazeera · AFP · ESA · GFZ · "
-            "UKMTO · Geopolitiki · Friends of Football · Sportsbrain24 · "
-            "Sportradar · 4.0 Sports — Original drawings")
+            "UKMTO · Geopolitiki · Yonhap · Geo News · IANS · Antara · "
+            "NewsFirst · The News · Govt House · Friends of Football — "
+            "Original drawings")
 
 
 def draw_list_col(cv, x, y, items, w=336, em=10, leading=12):
