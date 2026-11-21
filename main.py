@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """THE WORLD IN ONE DAY -- front page for Saturday 21 November 2026.
 
-  news21 (22 Nov 2026): 47 stories, all dated Saturday 21 November 2026.
+  news21 (22 Nov 2026): 35 stories, all dated Saturday 21 November 2026.
   Layout follows the rank-1 news20 reference (date as masthead, stat
   strip, region bar, 3 illustrated leads, 10 featured with thumbnails,
   world map + ALSO list, DATE CHECK box, footer).
@@ -10,8 +10,10 @@
   GONE. Every letter on the page is drawn from a hand-built VECTOR
   serif font: each glyph is a set of strokes (polylines and elliptical
   arcs) in a 100-unit em, with thick vertical stems, thin horizontals,
-  diagonal contrast and serif feet, rasterised at SS=4 supersampling
-  and blended by per-pixel coverage. That is what makes the masthead,
+  diagonal contrast and serif feet, rasterised at SS=8 supersampling
+  and blended by per-pixel coverage. Large text uses linear coverage
+  (genuinely smooth grey edges); small text keeps a sqrt gamma so
+  1 px strokes stay dark. That is what makes the masthead,
   headlines and body read as a real newspaper instead of pixel art:
   the shapes themselves are smooth curves, not a finer grid of blocks.
   Bold weights are done by widening the strokes (masthead 1.45x,
@@ -21,10 +23,10 @@
   produce byte-identical output. Writes $MAKEFUN_OUTPUT_DIR/entry.png
   (fallback /output). 1024x1024 PNG.
 
-  Stories (47): 3 leads + 10 featured + 34 ALSO, every one dated
+  Stories (35): 3 leads + 10 featured + 22 ALSO, every one dated
   Saturday 21 November 2026, every one carrying its source in
-  parentheses. Regions (recounted from the 47): AMERICAS 13, EUROPE 9,
-  ASIA 8, AFRICA 6, MIDDLE EAST 5, GLOBAL 5, OCEANIA 1.
+  parentheses. Regions (recounted from the 35 kept stories): EUROPE 9,
+  ASIA 6, MIDDLE EAST 5, AFRICA 4, AMERICAS 8, OCEANIA 1, GLOBAL 2.
   DATE CHECK lists the items deliberately left out (19-20 Nov news).
 """
 import hashlib
@@ -34,7 +36,7 @@ import struct
 import zlib
 
 W = H = 1024
-SS = 4  # text supersampling factor
+SS = 8  # text supersampling factor
 
 PAPER = (250, 246, 236)
 INK = (17, 17, 17)
@@ -213,14 +215,14 @@ NORMALISE = {'’': "'", '‘': "'", '“': '"', '”': '"',
 # ------------------------------------------------------ font rendering ----
 # Each glyph is rasterised once per (char, em_px, weight, italic) into a
 # coverage map at output resolution, cached, then blended onto the page.
-# Coverage comes from a SS=4 supersampled mask: smooth curves get grey
-# edge pixels instead of stair-steps. A sqrt gamma keeps 1 px strokes
-# dark, as in the v6 bitmap renderer.
+# Coverage comes from a SS=8 supersampled mask: smooth curves get grey
+# edge pixels instead of stair-steps. Large text (em >= 14) blends with
+# linear coverage; small text uses a sqrt gamma to keep 1 px strokes dark.
 _GLYPH_CACHE = {}
 
 
 def _arc_points(cx, cy, rx, ry, a0, a1):
-    step = 12.0
+    step = 6.0
     pts = []
     if a1 >= a0:
         n = max(2, int((a1 - a0) / step) + 1)
@@ -347,7 +349,11 @@ def _render_glyph(ch, em, weight, italic):
                 # vertical line at every glyph's right edge).
                 s += sum(mask[row:min(row + SS, (my + 1) * mw)])
             if s:
-                ink.append((ox, oy, (s / (SS * SS)) ** 0.5))
+                cov = s / (SS * SS)
+                # Large text (masthead, stat numbers, headlines, em >= 14)
+                # uses linear coverage so edges fade genuinely smoothly;
+                # small text keeps the sqrt gamma so 1 px strokes stay dark.
+                ink.append((ox, oy, cov if em >= 14 else cov ** 0.5))
     adv = int(round(width * em / 100.0)) + max(0, int(round(0.03 * em)))
     res = (adv, out_w, out_h, ink)
     _GLYPH_CACHE[key] = res
@@ -1184,12 +1190,12 @@ STATS = [
 
 REGIONS = [
     ("EUROPE", 9, (36, 64, 120)),
-    ("ASIA", 8, RED),
+    ("ASIA", 6, RED),
     ("MIDDLE EAST", 5, (150, 100, 20)),
-    ("AFRICA", 6, GREEN),
-    ("AMERICAS", 13, (90, 60, 140)),
+    ("AFRICA", 4, GREEN),
+    ("AMERICAS", 8, (90, 60, 140)),
     ("OCEANIA", 1, (20, 120, 120)),
-    ("GLOBAL", 5, (70, 70, 70)),
+    ("GLOBAL", 2, (70, 70, 70)),
 ]
 
 # Grounded times only: Peru quake 00:09 UTC (research); US market close
