@@ -31,13 +31,15 @@
 
   Stories (35): 3 leads + 10 featured + 22 ALSO, every one dated
   Saturday 21 November 2026, every one carrying its source in
-  parentheses. Regions (recounted from the 35 kept stories): EUROPE 12,
-  ASIA 8, MIDDLE EAST 6, AFRICA 1, AMERICAS 4, OCEANIA 2, GLOBAL 2.
-  v6: 12 sports ALSO items replaced with substantive Sat 21 Nov news
-  (Yonhap/Geo/AP/Thai Govt/The News/NewsFirst/Reuters/IANS/Antara/AFP);
-  only 4 sports remain in ALSO (#20, #21, #28, #29). U-17 items are
-  counted by the winning team's region (as in v5); Banda Sea counts
-  as Oceania, COP31 (#7) as Global.
+  parentheses. Regions (recounted from the 35 kept stories): EUROPE 8,
+  ASIA 10, MIDDLE EAST 6, AFRICA 2, AMERICAS 6, OCEANIA 1, GLOBAL 2.
+  v7: grey bars killed (pic_fire chimney height bug -- an absolute
+  coordinate passed as a rect height, bleeding 500+ px down the page);
+  leads reordered Riyadh / COP31 / Peru; Peru 6.8 -> 6.7 (USGS),
+  Banda Sea 6.8 confirmed (Reuters/GFZ); UTC timeline strip dropped;
+  stat numbers big red; last sports + soft ALSO items replaced with
+  verified Sat 21 Nov news. Banda Sea counts as Oceania, COP31 (#2)
+  as Global.
   DATE CHECK lists the Fri 19-20 Nov items deliberately left out --
   the Kyiv Bridges strike (overnight 20 Nov) is OUT entirely, no part
   of it is claimed as 21 Nov.
@@ -852,9 +854,9 @@ def caption_strip(cv, x, y, w, s, em=9):
 
 def pic_kyiv(cv, ox, oy, w, h):
     grad_v(cv, ox, oy, w, h, (16, 26, 54), (38, 58, 96))
-    mx, my = ox + int(w * 0.88), oy + int(h * 0.16)
-    cv.fill_circle(mx, my, 11, (210, 210, 190))
-    cv.fill_circle(mx, my, 7, (240, 238, 220))
+    mx, my = ox + int(w * 0.88), oy + int(h * 0.20)
+    cv.fill_circle(mx, my, 9, (210, 210, 190))
+    cv.fill_circle(mx, my, 6, (240, 238, 220))
     cv.fill_circle(mx - 2, my - 2, 2, (200, 200, 185))
     for sx, sy in ((0.06, 0.12), (0.14, 0.07), (0.24, 0.18), (0.33, 0.08),
                    (0.44, 0.14), (0.55, 0.07), (0.66, 0.16), (0.76, 0.06),
@@ -1158,16 +1160,18 @@ def pic_quake(cv, ox, oy, w, h):
     cv.fill_rect(hx + 20, hy + 2, 5, 6, PAPER)
     for dx, dy in ((-6, -8), (40, -12), (30, 6), (-2, 4)):
         cv.fill_circle(hx + dx, hy + dy, 3, (180, 170, 150))
-    cv.vtext(ox + 4, oy + 4, "6.8", 11, RED, 1.3)
+    # magnitude at top RIGHT: the tag covers the top-left corner
+    cv.vtext(ox + w - 34, oy + 4, "6.7", 11, RED, 1.3)
 
 
 def pic_seaquake(cv, ox, oy, w, h):
     grad_v(cv, ox, oy, w, h, (150, 190, 220), (60, 110, 165))
     for cx0, cy0, r0 in ((0.14, 0.12, 6), (0.22, 0.09, 8), (0.70, 0.08, 6)):
         cv.fill_circle(ox + int(w * cx0), oy + int(h * cy0), r0, PAPER)
-    # epicentre rings on the water
-    cx, cy = ox + int(w * 0.42), oy + int(h * 0.58)
-    for r in (6, 12, 18, 24, 30):
+    # epicentre rings on the water (r=30 ring bled 7 px below the pic
+    # box at small size, so the rings stop at 24 and sit lower)
+    cx, cy = ox + int(w * 0.42), oy + int(h * 0.52)
+    for r in (6, 12, 18, 24):
         cv.circle(cx, cy, r, PAPER, 2)
     cv.fill_circle(cx, cy, 4, RED)
     cv.star(cx, cy, 6, RED, 2)
@@ -1181,7 +1185,8 @@ def pic_seaquake(cv, ox, oy, w, h):
                   (ix + 6, oy + int(h * 0.66)),
                   (ix - 6, oy + int(h * 0.66))], LAND)
     cv.fill_circle(ix, oy + int(h * 0.60), 5, GREEN)
-    cv.vtext(ox + 4, oy + 4, "6.8", 11, RED, 1.3)
+    # magnitude at top RIGHT: the tag covers the top-left corner
+    cv.vtext(ox + w - 34, oy + 4, "6.8", 11, RED, 1.3)
 
 
 def pic_mercury(cv, ox, oy, w, h):
@@ -1265,7 +1270,10 @@ def pic_fire(cv, ox, oy, w, h):
     cv.hline(tx + 8, tx + 30, oy + int(h * 0.18), (90, 85, 75), 2)
     for cx0 in (0.55, 0.68, 0.81):
         cxp = ox + int(w * cx0)
-        cv.fill_rect(cxp, oy + int(h * 0.30), 10, oy + h - int(h * 0.30),
+        # HEIGHT is h - 0.30h, not oy + h - 0.30h: the old absolute
+        # value made each chimney ~oy px too tall, painting a solid
+        # grey bar down the whole page over the story text below.
+        cv.fill_rect(cxp, oy + int(h * 0.30), 10, h - int(h * 0.30),
                      (110, 105, 95))
         cv.fill_rect(cxp - 1, oy + int(h * 0.28), 12, 3, INK)
     # flames licking the plant
@@ -1281,8 +1289,8 @@ def pic_fire(cv, ox, oy, w, h):
                       (px + 12, base)], col)
         cv.fill_poly([(px - 5, base), (px - 2, base - ph + 6),
                       (px + 2, base - ph + 6), (px + 5, base)], YELLOW)
-    # smoke + embers
-    for sx0, sy0, r0 in ((0.48, 0.22, 7), (0.56, 0.14, 9), (0.66, 0.20, 6),
+    # smoke + embers (the 0.14/r9 puff poked 1 px above the pic box)
+    for sx0, sy0, r0 in ((0.48, 0.22, 7), (0.56, 0.18, 8), (0.66, 0.20, 6),
                          (0.36, 0.16, 5)):
         cv.fill_circle(ox + int(w * sx0), oy + int(h * sy0), r0,
                        (100, 100, 105))
@@ -1375,12 +1383,12 @@ MAP_SPANS = {
     16: [(13, 13)],
 }
 # story number -> (map col, map row, label dx, label dy)
-# 6 (BepiColombo) is in orbit round Mercury: off the map, noted below.
+# 8 (BepiColombo) is in orbit round Mercury: off the map, noted below.
 MAP_DOTS = [
-    (1, 31, 7, 6, 4), (2, 25, 2, 6, -6), (3, 30, 6, 6, 4),
-    (4, 30, 5, -4, -12), (5, 42, 11, 6, -4), (7, 27, 4, -14, -6),
-    (8, 33, 6, 6, 4), (9, 43, 10, 6, -4), (10, 24, 3, -10, -10),
-    (11, 27, 1, 6, -6), (12, 12, 11, -12, 2), (13, 27, 3, 8, -4),
+    (1, 31, 7, 6, 4), (2, 27, 4, -14, -6), (3, 12, 11, -12, 2),
+    (4, 25, 2, 6, -6), (5, 30, 6, 6, 4), (6, 30, 5, -4, -12),
+    (7, 42, 11, 6, -4), (9, 33, 6, 6, 4), (10, 43, 10, 6, -4),
+    (11, 24, 3, -10, -10), (12, 27, 1, 6, -6), (13, 27, 3, 8, -4),
 ]
 
 def draw_map(cv, ox, oy, cell=5):
@@ -1419,100 +1427,90 @@ LEGEND = ("HOW WE CHECKED — CONFIRMED = 2+ OUTLETS · OFFICIAL = ON THE "
 STATS = [
     ("3", "MISSILES INTERCEPTED", "OVER RIYADH"),
     ("8", "RIYADH EMERGENCY", "ALERTS IN 24 HOURS"),
-    ("6.8", "MAGNITUDE OF THE PERU", "AND BANDA SEA QUAKES"),
+    ("6.7", "MAGNITUDE OF THE PERU", "QUAKE · BANDA SEA 6.8"),
     ("2", "TANKERS HIT NEAR", "THE STRAIT OF HORMUZ"),
     ("146", "PEOPLE SAFE AFTER", "AIR NIUGINI DIVERSION"),
     ("128", "STATES AT THE UN", "KILLER-ROBOT TALKS"),
 ]
 
 REGIONS = [
-    ("EUROPE", 12, (36, 64, 120)),
-    ("ASIA", 8, RED),
+    ("EUROPE", 8, (36, 64, 120)),
+    ("ASIA", 10, RED),
     ("MIDDLE EAST", 6, (150, 100, 20)),
-    ("AFRICA", 1, GREEN),
-    ("AMERICAS", 4, (90, 60, 140)),
-    ("OCEANIA", 2, (20, 120, 120)),
+    ("AFRICA", 2, GREEN),
+    ("AMERICAS", 6, (90, 60, 140)),
+    ("OCEANIA", 1, (20, 120, 120)),
     ("GLOBAL", 2, (70, 70, 70)),
 ]
 
-# Grounded times only: Peru quake 00:09 UTC (GFZ); Banda Sea quake
-# 09:42 UTC (GFZ); BepiColombo insertion 18:24 UTC (ESA); the rest
-# are coarse labels, not invented times.
-TIMELINE = [
-    ("00:09 UTC", "PERU QUAKE 6.8 STRIKES"),
-    ("09:42 UTC", "BANDA SEA QUAKE 6.8"),
-    ("AFTERNOON", "COP31 INTO OVERTIME"),
-    ("18:24 UTC", "BEPICOLOMBO ORBITS MERCURY"),
-    ("NIGHT", "MISSILES FIRED AT RIYADH"),
-]
+# Grounded times live in the story bodies only (Peru quake 00:09 UTC,
+# Banda Sea quake 09:42 UTC, BepiColombo insertion 18:24 UTC). The
+# separate UTC timeline strip was dropped in v7 -- no top entry has one.
 
 TOP3 = [
     dict(pic=pic_riyadh, tag="RIYADH", tag2="THREE MISSILES DOWN",
-         cap="CONFIRMED · REUTERS", w=304, pic_h=102, head_em=19,
+         cap="CONFIRMED · REUTERS", w=304, pic_h=114, head_em=19,
          kicker="1 RIYADH — MISSILES",
          head="Houthis fire missiles at Riyadh",
          body="Saudi defences intercepted three Houthi ballistic "
               "missiles headed for Riyadh early on Saturday, the "
               "coalition said, after the attack was confirmed "
               "shortly after 02:00. (Reuters)"),
-    dict(pic=pic_flags, tag="WARSAW", tag2="NATO CHIEF IN POLAND",
-         cap="REPORTED · REUTERS", w=304, pic_h=102, head_em=19,
-         kicker="2 WARSAW — NATO",
-         head="NATO will defend every inch of Poland",
-         body="NATO chief Mark Rutte, in Warsaw a day after "
-              "missiles and a drone came down in Poland, said the "
-              "alliance will defend every inch of Polish "
-              "territory. (Reuters)"),
-    dict(pic=pic_aid, tag="GAZA", tag2="AID VEHICLE HIT",
-         cap="REPORTED · REUTERS", w=304, pic_h=102, head_em=19,
-         kicker="3 GAZA — AID STRIKE",
-         head="Strike kills three in Gaza aid vehicle",
-         body="An Israeli strike killed three Palestinians in a "
-              "vehicle carrying food and papers for the World "
-              "Central Kitchen charity in Gaza City on Saturday, "
-              "the health ministry said. (Reuters)"),
+    dict(pic=pic_summit, tag="COP31", tag2="TALKS IN OVERTIME",
+         cap="REPORTED · AP", w=304, pic_h=114, head_em=19,
+         kicker="2 ANTALYA — CLIMATE",
+         head="COP31 deadlocked over fossil fuels",
+         body="Negotiators went into overtime on Saturday; the "
+              "draft deal leaves fossil fuels out. (AP)"),
+    dict(pic=pic_quake, tag="PERU QUAKE", tag2="FELT IN LIMA",
+         cap="OFFICIAL · USGS", w=304, pic_h=114, head_em=19,
+         kicker="3 JUNIN, PERU — QUAKE",
+         head="Peru quake shakes Andes, felt in Lima",
+         body="Magnitude 6.7 at 00:09 UTC on Saturday; felt in "
+              "Lima, 300 km from the epicentre, with no deaths "
+              "reported. (USGS)"),
 ]
 
 MID5 = [
+    dict(pic=pic_flags, tag="WARSAW", cap="REPORTED · REUTERS",
+         kicker="4 WARSAW — NATO",
+         head="NATO will defend every inch of Poland",
+         body="Rutte, in Warsaw a day after missiles fell in Poland. (Reuters)"),
+    dict(pic=pic_aid, tag="GAZA", cap="REPORTED · REUTERS",
+         kicker="5 GAZA — AID STRIKE",
+         head="Strike kills three in Gaza aid vehicle",
+         body="Israeli strike kills three in a World Central Kitchen vehicle. (Reuters)"),
     dict(pic=pic_fire, tag="BASRA FIRE", cap="REPORTED · REUTERS",
-         kicker="4 BASRA, IRAQ — FIRE",
+         kicker="6 BASRA, IRAQ — FIRE",
          head="Basra power plant fire kills four",
          body="Gas blast at Hartha station; four dead, 30-35 hurt. (Reuters)"),
     dict(pic=pic_seaquake, tag="BANDA SEA QUAKE", cap="CONFIRMED · REUTERS",
-         kicker="5 BANDA SEA — QUAKE",
+         kicker="7 BANDA SEA — QUAKE",
          head="Banda Sea quake near Timor-Leste",
          body="Magnitude 6.8 at 09:42 UTC, 226 km from Dili. (Reuters)"),
     dict(pic=pic_mercury, tag="MERCURY ORBIT", cap="OFFICIAL · ESA",
-         kicker="6 MERCURY — SPACE",
+         kicker="8 MERCURY — SPACE",
          head="BepiColombo enters Mercury orbit",
          body="Insertion at 18:24 UTC on Saturday, after eight years. (ESA)"),
-    dict(pic=pic_summit, tag="COP31: NO DEAL", cap="REPORTED · AP",
-         kicker="7 ANTALYA — CLIMATE",
-         head="COP31 deadlocked over fossil fuels",
-         body="Talks in overtime on Saturday; fossil fuels left out. (AP)"),
-    dict(pic=pic_globe, tag="HORMUZ HIT", cap="CONFIRMED · REUTERS",
-         kicker="8 STRAIT OF HORMUZ — SHIPPING",
-         head="Two tankers hit near Hormuz",
-         body="UKMTO reports two tankers struck on Saturday. (Reuters)"),
 ]
 
 BOT5 = [
+    dict(pic=pic_globe, tag="HORMUZ HIT", cap="CONFIRMED · REUTERS",
+         kicker="9 STRAIT OF HORMUZ — SHIPPING",
+         head="Two tankers hit near Hormuz",
+         body="UKMTO reports two tankers struck on Saturday. (Reuters)"),
     dict(pic=pic_plane, tag="EMERGENCY LANDING", cap="REPORTED · AP",
-         kicker="9 DAVAO — DIVERSION",
+         kicker="10 DAVAO — DIVERSION",
          head="Air Niugini jet lands after engine alert",
          body="PX19 Hong Kong to Port Moresby diverted; 146 aboard safe. (AP)"),
     dict(pic=pic_hack, tag="KILLER ROBOTS", cap="REPORTED · REUTERS",
-         kicker="10 GENEVA — UN TALKS",
+         kicker="11 GENEVA — UN TALKS",
          head="UN robot talks end with no binding rules",
          body="128 states agree only to keep talking; talks ended 04:30. (Reuters)"),
     dict(pic=pic_fire, tag="SHIP ON FIRE", cap="CONFIRMED · REUTERS",
-         kicker="11 GULF OF FINLAND — DRONES",
+         kicker="12 GULF OF FINLAND — DRONES",
          head="Drones hit Russian cargo ship Sparta II",
          body="Two drones struck the ship; it caught fire and drifted. (Reuters)"),
-    dict(pic=pic_quake, tag="PERU QUAKE", cap="OFFICIAL · GFZ",
-         kicker="12 JUNIN, PERU — QUAKE",
-         head="Peru quake shakes Andes, felt in Lima",
-         body="Magnitude 6.8 at 00:09 UTC on Saturday; felt in Lima. (GFZ)"),
     dict(pic=pic_kyiv, tag="KYIV MEETING", cap="REPORTED · BBC",
          kicker="13 KYIV — UKRAINE",
          head="Zelensky: bridge strikes a fair response",
@@ -1524,17 +1522,24 @@ BOT5 = [
 # results, Sat announcements, Reuters/AP/BBC Sat wires). v6: 12 sports
 # items replaced with substantive Sat 21 Nov news (first-reported
 # Saturday items included: #32 PLN deals, #33 capture announced Sat,
-# #34 EU proposal revealed Sat, #35 talks disclosed Sat). Every item
-# carries its source in parentheses plus its verification tag.
+# #34 EU proposal revealed Sat, #35 talks disclosed Sat). v7: the last
+# sports scores (#21 T20, #28-29 U-17) plus the soft items #18 (Kate
+# film) and #20 (McKinney call-up) replaced with verified Sat 21 Nov
+# news -- Rohingya plan dismissed Sat (Reuters), Kenya police
+# headcount (254 News, dated 21 Nov), NSE 5th-largest (TradingView,
+# published 21 Nov, on Fri close), Bolsonaro in ICU Sat (Reuters),
+# Trump contractor order (Reuters, published 21 Nov, signed Fri
+# night). Every item carries its source in parentheses plus its
+# verification tag.
 ALSO_LEFT = [
     "14 YEMEN — SAUDI STRIKES ON HODEIDAH, MOCHA (GEOPOLITIKI) · CLAIM",
     "15 S AFRICA — TRIBUTES FOR MLAMBO-NGCUKA (PARLIAMENT) · REPORTED",
     "16 KYIV — DRONES OVER KYIV AGAIN OVERNIGHT (KYIV CITY) · CLAIM",
     "17 BRUSSELS — FRANCE SLAMS EU BUDGET PLAN (REUTERS) · REPORTED",
-    "18 LONDON — KATE FILM ON LIFE AFTER CANCER (REUTERS) · REPORTED",
+    "18 KUALA LUMPUR — TURKEY REJECTS ROHINGYA PLAN (REUTERS) · REPORTED",
     "19 WASHINGTON — RECORD BLACK DEMOCRATS IN CONGRESS (REUTERS) · REPORTED",
-    "20 ENGLAND — MCKINNEY CALLED UP FOR S AFRICA (BBC) · REPORTED",
-    "21 AUSTRALIA — CHAUDHARY DOWNS ENGLAND IN T20 (BBC) · REPORTED",
+    "20 NAIROBI — POLICE HEADCOUNT OVER RUSSIA RECRUITS (254 NEWS) · REPORTED",
+    "21 MUMBAI — NSE NOW 5TH-LARGEST EXCHANGE (TRADINGVIEW) · REPORTED",
     "22 SEJONG — FREIGHT TRAIN DERAILS, HALTS MAIN LINE (YONHAP) · REPORTED",
     "23 BALOCHISTAN — FORCES KILL 15 MILITANTS IN MASTUNG (GEO NEWS) · REPORTED",
     "24 BRAZIL — MOSQUITOES CUT DENGUE 69% IN CHILD STUDY (AP) · REPORTED",
@@ -1544,8 +1549,8 @@ ALSO_RIGHT = [
     "25 BANGKOK — PM CHAIRS ARSENIC EMERGENCY MEETING (GOVT HOUSE) · REPORTED",
     "26 NEW DELHI — PAKISTAN MINISTER ADDRESSES SCO FORUM (THE NEWS) · REPORTED",
     "27 COLOMBO — COURT CLEARS ORGANISED-CRIME BILL (NEWSFIRST) · REPORTED",
-    "28 DOHA — BELGIUM 3 VIETNAM 2 AT U-17 WC (FOF) · REPORTED",
-    "29 DOHA — SPAIN 5 CHINA 0 AT U-17 WC (FOF) · REPORTED",
+    "28 BRASILIA — BOLSONARO IN INTENSIVE CARE (REUTERS) · REPORTED",
+    "29 WASHINGTON — TRUMP: CONTRACTORS MUST ALERT US (REUTERS) · REPORTED",
     "30 MADRID — SPAIN TO EXTEND BANK TAX TO FUND HOUSING (REUTERS) · REPORTED",
     "31 MUMBAI — RECORD FOREIGN INFLOWS INTO INDIA STOCKS (IANS) · REPORTED",
     "32 ANTALYA — PLN SIGNS SIX RENEWABLE POWER DEALS (ANTARA) · REPORTED",
@@ -1571,7 +1576,7 @@ FOOTER_1 = ("Every story here happened, or was first reported, on "
             "Saturday 21 November 2026.")
 FOOTER_2 = ("Sources: BBC · Reuters · AP · Al Jazeera · AFP · ESA · GFZ · "
             "UKMTO · Geopolitiki · Yonhap · Geo News · IANS · Antara · "
-            "NewsFirst · The News · Govt House · Friends of Football — "
+            "NewsFirst · The News · Govt House · 254 News · TradingView — "
             "Original drawings")
 
 
@@ -1609,20 +1614,20 @@ def draw():
     # ---- masthead: the date itself, huge smooth serif (rank 1 style) ----
     cv.vtext_centred(W // 2, 38, "Saturday 21 November 2026", 62, INK, 1.45)
     cv.vtext_centred(W // 2, 104,
-                     "Houthis fire on Riyadh · NATO chief in Warsaw · "
-                     "Strike kills three in Gaza aid vehicle",
+                     "Houthis fire on Riyadh · COP31 deadlocked in "
+                     "Antalya · Peru quake shakes the Andes",
                      13, GRAY, 1.0, italic=True)
     cv.hline(MARGIN, RIGHT, 124, INK, 3)
     cv.hline(MARGIN, RIGHT, 129, INK, 1)
 
-    # ---- THE DAY IN NUMBERS strip ----
-    cv.fill_rect(MARGIN, 134, 952, 54, (244, 239, 228))
+    # ---- THE DAY IN NUMBERS strip (big red numbers, top-entry style) ----
+    cv.fill_rect(MARGIN, 134, 952, 62, (244, 239, 228))
     cv.hline(MARGIN, RIGHT, 134, RED, 1)
-    cv.hline(MARGIN, RIGHT, 187, INK, 1)
+    cv.hline(MARGIN, RIGHT, 195, INK, 1)
     cv.vtext(MARGIN, 137, "THE DAY IN NUMBERS", 9, RED, 1.3)
     widths = []
     for num, l1, l2 in STATS:
-        widths.append(max(cv.vtext_width(num, 21, 1.3),
+        widths.append(max(cv.vtext_width(num, 26, 1.3),
                           cv.vtext_width(l1, 8), cv.vtext_width(l2, 8)) + 14)
     extra = 952 - sum(widths)
     widths = [w + extra // len(widths) for w in widths]
@@ -1630,10 +1635,10 @@ def draw():
     x = MARGIN
     for (num, l1, l2), wseg in zip(STATS, widths):
         if x > MARGIN:
-            cv.vline(x - 7, 148, 183, RED, 2)
-        cv.vtext(x, 149, num, 21, INK, 1.3)
-        cv.vtext(x, 170, l1, 8, GRAY)
-        cv.vtext(x, 178, l2, 8, GRAY)
+            cv.vline(x - 7, 150, 191, RED, 2)
+        cv.vtext(x, 148, num, 26, RED, 1.3)
+        cv.vtext(x, 176, l1, 8, GRAY)
+        cv.vtext(x, 184, l2, 8, GRAY)
         x += wseg
 
     # ---- region bar ----
@@ -1643,35 +1648,25 @@ def draw():
     widths[_widest] -= sum(widths) - 952
     x = MARGIN
     for (name, count, col), wseg in zip(REGIONS, widths):
-        cv.fill_rect(x, 192, wseg, 17, col)
-        cv.vtext_centred(x + wseg // 2, 196, "%s %d" % (name, count), 10,
+        cv.fill_rect(x, 200, wseg, 17, col)
+        cv.vtext_centred(x + wseg // 2, 204, "%s %d" % (name, count), 10,
                          PAPER, 1.2)
         x += wseg
 
-    # ---- THE DAY IN UTC timeline ----
-    cv.vtext(MARGIN, 216, "THE DAY IN UTC", 10, RED, 1.3)
-    tx = 150
-    for t, ev in TIMELINE:
-        if tx > 150:
-            cv.vline(tx - 6, 218, 238, (200, 192, 172), 1)
-        cv.vtext(tx, 216, t, 10, RED, 1.3)
-        cv.vtext(tx, 227, ev, 9, INK)
-        tx += 167
-
-    # ---- top 3 stories ----
-    cv.vtext(MARGIN, 244, "TOP STORIES", 11, RED, 1.4)
-    cv.hline(MARGIN + 92, RIGHT, 247, RED, 1)
+    # ---- top 3 stories (UTC timeline strip dropped in v7) ----
+    cv.vtext(MARGIN, 224, "TOP STORIES", 11, RED, 1.4)
+    cv.hline(MARGIN + 92, RIGHT, 227, RED, 1)
     top_x = [MARGIN, 360, 684]
     for (sx, story) in zip(top_x, TOP3):
         w = story['w']
         ph = story['pic_h']
-        pic_box(cv, sx, 254, w, ph)
-        story['pic'](cv, sx + 1, 255, w - 2, ph - 2)
-        tag(cv, sx + 5, 259, story['tag'])
-        tag_white(cv, sx + 5, 276, story['tag2'])
-        caption_strip(cv, sx + 1, 254 + ph - 14, w - 2, story['cap'])
-        cv.vtext(sx, 362, story['kicker'], 10, RED, 1.3)
-        y = 374
+        pic_box(cv, sx, 232, w, ph)
+        story['pic'](cv, sx + 1, 233, w - 2, ph - 2)
+        tag(cv, sx + 5, 237, story['tag'])
+        tag_white(cv, sx + 5, 254, story['tag2'])
+        caption_strip(cv, sx + 1, 232 + ph - 14, w - 2, story['cap'])
+        cv.vtext(sx, 352, story['kicker'], 10, RED, 1.3)
+        y = 364
         for line in cv.vwrap(story['head'], story['head_em'], w, 1.3):
             cv.vtext(sx, y, line, story['head_em'], INK, 1.3)
             y += story['head_em'] + 4
@@ -1679,7 +1674,7 @@ def draw():
         for line in cv.vwrap(story['body'], 11, w, 1.0):
             cv.vtext(sx, y, line, 11, GRAY)
             y += 13
-    cv.hline(MARGIN, RIGHT, 488, INK, 1)
+    cv.hline(MARGIN, RIGHT, 478, INK, 1)
 
     # ---- five-story rows (middle + bottom) ----
     def five_row(y0, stories):
@@ -1699,24 +1694,24 @@ def draw():
                 cv.vtext(sx, y, line, 10, GRAY)
                 y += 11
 
-    cv.vtext(MARGIN, 494, "MORE FROM THE DAY", 11, RED, 1.4)
-    cv.hline(MARGIN + 148, RIGHT, 497, RED, 1)
-    five_row(504, MID5)
-    five_row(632, BOT5)
-    cv.hline(MARGIN, RIGHT, 760, INK, 1)
+    cv.vtext(MARGIN, 484, "MORE FROM THE DAY", 11, RED, 1.4)
+    cv.hline(MARGIN + 148, RIGHT, 487, RED, 1)
+    five_row(494, MID5)
+    five_row(622, BOT5)
+    cv.hline(MARGIN, RIGHT, 750, INK, 1)
 
     # ---- map + also list ----
-    cv.vtext(MARGIN, 766, "WHERE IT HAPPENED", 11, RED, 1.4)
-    cv.vtext(252, 766, "ALSO ON SATURDAY 21 NOVEMBER — 22 MORE STORIES",
+    cv.vtext(MARGIN, 756, "WHERE IT HAPPENED", 11, RED, 1.4)
+    cv.vtext(252, 756, "ALSO ON SATURDAY 21 NOVEMBER — 22 MORE STORIES",
              11, INK, 1.3)
-    pic_box(cv, MARGIN, 778, 204, 102)
-    draw_map(cv, MARGIN + 5, 783, cell=4)
+    pic_box(cv, MARGIN, 768, 204, 110)
+    draw_map(cv, MARGIN + 5, 773, cell=4)
     for i, line in enumerate(cv.vwrap(
             "EACH NUMBER MATCHES A STORY ON THIS PAGE. "
-            "6 IS IN ORBIT ROUND MERCURY — OFF THE MAP.", 7, 192)):
-        cv.vtext(MARGIN, 884 + i * 9, line, 7, GRAY)
-    draw_list_col(cv, 252, 778, ALSO_LEFT, w=360, em=9)
-    draw_list_col(cv, 624, 778, ALSO_RIGHT, w=360, em=9)
+            "8 IS IN ORBIT ROUND MERCURY — OFF THE MAP.", 7, 192)):
+        cv.vtext(MARGIN, 882 + i * 9, line, 7, GRAY)
+    draw_list_col(cv, 252, 768, ALSO_LEFT, w=360, em=9)
+    draw_list_col(cv, 624, 768, ALSO_RIGHT, w=360, em=9)
 
     # ---- legend ----
     cv.vtext(MARGIN, 910, LEGEND, 9, INK, 1.1)
