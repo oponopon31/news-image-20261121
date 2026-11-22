@@ -32,7 +32,8 @@
   Stories (35): 3 leads + 10 featured + 22 ALSO, every one dated
   Saturday 21 November 2026, every one carrying its source in
   parentheses. Regions (recounted from the 35 kept stories): EUROPE 8,
-  ASIA 10, MIDDLE EAST 6, AFRICA 2, AMERICAS 6, OCEANIA 1, GLOBAL 2.
+  SOUTH ASIA 5, EAST ASIA 1, SOUTH-EAST ASIA 4, MIDDLE EAST 6,
+  AFRICA 2, AMERICAS 6, OCEANIA 1, GLOBAL 2.
   v7: grey bars killed (pic_fire chimney height bug -- an absolute
   coordinate passed as a rect height, bleeding 500+ px down the page);
   leads reordered Riyadh / COP31 / Peru; Peru 6.8 -> 6.7 (USGS),
@@ -44,6 +45,10 @@
   columns below it), COP31 globe/thermometer/clock illustration, UTC
   timeline strip restored (3 precise UTC times + 2 approximate, marked
   (APPROX)); top-3 pics 114->100 and five-row pics 56->48 to fit.
+  v9: map reflowed side by side (map left at a real world-map aspect,
+  336x176 with near-square 7x11 cells and distinctly blue ocean;
+  ALSO in 2 columns right, em 7, leading 15); ASIA 10 split into
+  SOUTH ASIA 5 / EAST ASIA 1 / SOUTH-EAST ASIA 4 (9 regions).
   DATE CHECK lists the Fri 19-20 Nov items deliberately left out --
   the Kyiv Bridges strike (overnight 20 Nov) is OUT entirely, no part
   of it is claimed as 21 Nov.
@@ -1443,21 +1448,25 @@ MAP_SPANS = {
 # Pins are big red discs with the white number inside (rank-50 style);
 # each pin sits on a short leader from the true dot, because the
 # Europe / Middle East dots cluster too tightly for pins on the dot.
+# Offsets retuned for the v9 7x11 cells: the five Europe/Middle East
+# dots (11, 12, 13, 4, 2) fan out left / right / down, since there is
+# no room above row 1; 5 fans down-left clear of 1's dot, 6 fans right.
 MAP_DOTS = [
-    (1, 31, 7, 8, 20), (2, 27, 4, 38, 20), (3, 12, 11, -24, 16),
-    (4, 25, 2, -30, 16), (5, 30, 6, 28, -16), (6, 30, 5, 30, 14),
-    (7, 42, 11, 20, 14), (9, 33, 6, 34, -4), (10, 43, 10, 28, -16),
-    (11, 24, 3, -32, -7), (12, 27, 1, -34, 14), (13, 27, 3, 34, 4),
+    (1, 31, 7, 24, 17), (2, 27, 4, 0, 20), (3, 12, 11, -27, 17),
+    (4, 25, 2, -28, -10), (5, 30, 6, -17, 20), (6, 30, 5, 29, -7),
+    (7, 42, 11, 25, -3), (9, 33, 6, 26, -2), (10, 43, 10, 22, -16),
+    (11, 24, 3, -31, 3), (12, 27, 1, 30, 3), (13, 27, 3, -24, 15),
 ]
 
-def draw_map(cv, ox, oy, cell_w=19, cell_h=6):
-    # Full-width strip map: 48 cols x 16 rows (empty rows 0 and 17 of
-    # the old 18-row grid are cropped; the world spans the box height).
-    cv.fill_rect(ox, oy, 48 * cell_w, 16 * cell_h, (214, 228, 238))
+def draw_map(cv, ox, oy, cell_w=7, cell_h=11):
+    # Side-by-side map (v9): 48 cols x 16 rows at near-square cells,
+    # 336x176 -- a real world-map aspect instead of the v8 9.5:1 strip.
+    # Ocean is distinctly blue against PAPER so it reads as ocean.
+    cv.fill_rect(ox, oy, 48 * cell_w, 16 * cell_h, (178, 212, 238))
     for gx in range(0, 48, 6):
-        cv.vline(ox + gx * cell_w, oy, oy + 16 * cell_h, (190, 205, 220), 1)
+        cv.vline(ox + gx * cell_w, oy, oy + 16 * cell_h, (158, 188, 214), 1)
     for gy in range(0, 16, 6):
-        cv.hline(ox, ox + 48 * cell_w, oy + gy * cell_h, (190, 205, 220), 1)
+        cv.hline(ox, ox + 48 * cell_w, oy + gy * cell_h, (158, 188, 214), 1)
     for row, spans in MAP_SPANS.items():
         r = row - 1  # crop empty row 0
         for c0, c1 in spans:
@@ -1467,7 +1476,7 @@ def draw_map(cv, ox, oy, cell_w=19, cell_h=6):
                 if (c * 7 + row * 3) % 4 == 0:
                     cv.set(ox + c * cell_w + 1, oy + r * cell_h + 1,
                            (170, 152, 112))
-    cv.hline(ox, ox + 48 * cell_w - 1, oy + 8 * cell_h, (150, 150, 150), 1)
+    cv.hline(ox, ox + 48 * cell_w - 1, oy + 8 * cell_h, (140, 160, 180), 1)
     for num, col, row, dx, dy in MAP_DOTS:
         px = ox + col * cell_w + cell_w // 2
         py = oy + (row - 1) * cell_h + cell_h // 2
@@ -1502,7 +1511,9 @@ STATS = [
 
 REGIONS = [
     ("EUROPE", 8, (36, 64, 120)),
-    ("ASIA", 10, RED),
+    ("SOUTH ASIA", 5, RED),
+    ("EAST ASIA", 1, (210, 130, 30)),
+    ("SOUTH-EAST ASIA", 4, (190, 60, 110)),
     ("MIDDLE EAST", 6, (150, 100, 20)),
     ("AFRICA", 2, GREEN),
     ("AMERICAS", 6, (90, 60, 140)),
@@ -1677,7 +1688,7 @@ def draw():
     # ---- kicker: paper name left, story count right ----
     cv.vtext(MARGIN, 20, "THE WORLD IN ONE DAY", 12, RED, 1.4)
     cv.vtext_right(RIGHT, 21,
-                   "35 STORIES · 7 REGIONS · EVERY ONE DATED SATURDAY "
+                   "35 STORIES · 9 REGIONS · EVERY ONE DATED SATURDAY "
                    "21 NOVEMBER 2026", 10, INK, 1.2)
     cv.hline(MARGIN, RIGHT, 34, INK, 1)
 
@@ -1798,21 +1809,20 @@ def draw():
     five_row(600, BOT5)
     cv.hline(MARGIN, RIGHT, 719, INK, 1)
 
-    # ---- map + also list (v8: full-width map, ALSO in 3 columns) ----
+    # ---- map + also list (v9: map left at real world-map aspect,
+    # ALSO in 2 columns right; rank-1 / rank-20 layout) ----
     cv.vtext(MARGIN, 725, "WHERE IT HAPPENED", 11, RED, 1.4)
     cv.vtext_right(RIGHT, 725,
                    "ALSO ON SATURDAY 21 NOVEMBER — 22 MORE STORIES",
                    11, INK, 1.3)
-    pic_box(cv, MARGIN, 738, 952, 100)
-    draw_map(cv, MARGIN + 20, 740)
+    pic_box(cv, MARGIN, 738, 352, 188)
+    draw_map(cv, MARGIN + 8, 742)
+    draw_list_col(cv, 400, 740, ALSO_LEFT, w=278, em=7, leading=15)
+    draw_list_col(cv, 708, 740, ALSO_RIGHT, w=278, em=7, leading=15)
     _note = ("EACH NUMBER MATCHES A STORY ON THIS PAGE. "
              "8 IS IN ORBIT ROUND MERCURY — OFF THE MAP.")
-    cv.vtext(MARGIN, 842, _note, 8, GRAY)
-    cv.vtext(MARGIN + cv.vtext_width(_note, 8) + 8, 842, LEGEND, 8, INK, 1.1)
-    draw_list_col(cv, 36, 856, ALSO_LEFT[:8], w=312, em=8, leading=10)
-    draw_list_col(cv, 353, 856, ALSO_LEFT[8:] + ALSO_RIGHT[:4], w=312,
-                  em=8, leading=10)
-    draw_list_col(cv, 670, 856, ALSO_RIGHT[4:], w=312, em=8, leading=10)
+    cv.vtext(MARGIN, 928, _note, 8, GRAY)
+    cv.vtext(MARGIN + cv.vtext_width(_note, 8) + 8, 928, LEGEND, 8, INK, 1.1)
 
     # ---- date check ----
     cv.fill_rect(MARGIN, 940, 952, 43, (253, 238, 232))
