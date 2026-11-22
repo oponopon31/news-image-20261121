@@ -40,6 +40,10 @@
   stat numbers big red; last sports + soft ALSO items replaced with
   verified Sat 21 Nov news. Banda Sea counts as Oceania, COP31 (#2)
   as Global.
+  v8: full-width map with big numbered pins + leader lines (ALSO in 3
+  columns below it), COP31 globe/thermometer/clock illustration, UTC
+  timeline strip restored (3 precise UTC times + 2 approximate, marked
+  (APPROX)); top-3 pics 114->100 and five-row pics 56->48 to fit.
   DATE CHECK lists the Fri 19-20 Nov items deliberately left out --
   the Kyiv Bridges strike (overnight 20 Nov) is OUT entirely, no part
   of it is claimed as 21 Nov.
@@ -1101,6 +1105,58 @@ def pic_globe(cv, ox, oy, w, h):
     cv.vtext(cx + r - 5, cy - r - 2, "X", 9, PAPER, 1.2)
 
 
+def pic_cop31(cv, ox, oy, w, h):
+    """COP31 (v8): globe + thermometer + clock. The old summit scene
+    was three flags over a long empty table; this fills the slot with
+    the story itself -- a warming globe, a rising thermometer and a
+    clock running into overtime. Globe reuses pic_globe as its base."""
+    grad_v(cv, ox, oy, w, h, (242, 236, 220), (226, 218, 198))
+    stipple(cv, ox, oy, w, h, (200, 192, 170), seed=23, density=1)
+    # globe, left (pic_globe draws its own matching background)
+    pic_globe(cv, ox, oy, int(w * 0.42), h)
+    # thermometer, middle: paper tube, red mercury rising, tick marks
+    tx0 = ox + int(w * 0.52)
+    tx1 = ox + int(w * 0.57)
+    ttop, tbot = oy + int(h * 0.16), oy + int(h * 0.72)
+    cv.fill_rect(tx0, ttop, tx1 - tx0, tbot - ttop, PAPER)
+    cv.vline(tx0, ttop, tbot, INK, 1)
+    cv.vline(tx1 - 1, ttop, tbot, INK, 1)
+    cv.hline(tx0, tx1 - 1, ttop, INK, 1)
+    cv.fill_rect(tx0 + 2, oy + int(h * 0.34), tx1 - tx0 - 4,
+                 tbot - oy - int(h * 0.34), RED)
+    cv.fill_circle((tx0 + tx1) // 2, oy + int(h * 0.80), 12, PAPER)
+    cv.circle((tx0 + tx1) // 2, oy + int(h * 0.80), 12, INK, 1)
+    cv.fill_circle((tx0 + tx1) // 2, oy + int(h * 0.80), 9, RED)
+    for fy in (0.24, 0.38, 0.52, 0.66):
+        cv.hline(tx1 + 2, tx1 + 8, oy + int(h * fy), INK, 1)
+    # heat ticks rising off the bulb
+    for hx0, hy0 in ((0.50, 0.10), (0.55, 0.06), (0.60, 0.10)):
+        cv.line(ox + int(w * hx0), oy + int(h * hy0) + 6,
+                ox + int(w * hx0), oy + int(h * hy0), RED, 2)
+    # clock, right: face, hour ticks, hands at five to midnight
+    ccx, ccy = ox + int(w * 0.82), oy + int(h * 0.48)
+    cr = int(h * 0.30)
+    cv.fill_circle(ccx, ccy, cr, PAPER)
+    cv.circle(ccx, ccy, cr, INK, 2)
+    for k in range(12):
+        a = math.radians(k * 30.0)
+        x0 = ccx + int((cr - 4) * math.sin(a))
+        y0 = ccy - int((cr - 4) * math.cos(a))
+        x1 = ccx + int((cr - 1) * math.sin(a))
+        y1 = ccy - int((cr - 1) * math.cos(a))
+        cv.line(x0, y0, x1, y1, INK, 1)
+    # hour hand near 12, minute hand on 11 (five to twelve: overtime)
+    ha = math.radians(357.5)
+    cv.line(ccx, ccy, ccx + int(cr * 0.52 * math.sin(ha)),
+            ccy - int(cr * 0.52 * math.cos(ha)), INK, 3)
+    ma = math.radians(330.0)
+    cv.line(ccx, ccy, ccx + int(cr * 0.78 * math.sin(ma)),
+            ccy - int(cr * 0.78 * math.cos(ma)), INK, 2)
+    cv.fill_circle(ccx, ccy, 3, RED)
+    # shared baseline grounds the three elements
+    cv.hline(ox + 6, ox + w - 7, oy + int(h * 0.94), INK, 1)
+
+
 def pic_hack(cv, ox, oy, w, h):
     grad_v(cv, ox, oy, w, h, (20, 26, 40), (34, 44, 66))
     # server racks with blinking lights
@@ -1382,36 +1438,47 @@ MAP_SPANS = {
     15: [(13, 14), (39, 43)],
     16: [(13, 13)],
 }
-# story number -> (map col, map row, label dx, label dy)
+# story number -> (map col, map row, pin dx, pin dy)
 # 8 (BepiColombo) is in orbit round Mercury: off the map, noted below.
+# Pins are big red discs with the white number inside (rank-50 style);
+# each pin sits on a short leader from the true dot, because the
+# Europe / Middle East dots cluster too tightly for pins on the dot.
 MAP_DOTS = [
-    (1, 31, 7, 6, 4), (2, 27, 4, -14, -6), (3, 12, 11, -12, 2),
-    (4, 25, 2, 6, -6), (5, 30, 6, 6, 4), (6, 30, 5, -4, -12),
-    (7, 42, 11, 6, -4), (9, 33, 6, 6, 4), (10, 43, 10, 6, -4),
-    (11, 24, 3, -10, -10), (12, 27, 1, 6, -6), (13, 27, 3, 8, -4),
+    (1, 31, 7, 8, 20), (2, 27, 4, 38, 20), (3, 12, 11, -24, 16),
+    (4, 25, 2, -30, 16), (5, 30, 6, 28, -16), (6, 30, 5, 30, 14),
+    (7, 42, 11, 20, 14), (9, 33, 6, 34, -4), (10, 43, 10, 28, -16),
+    (11, 24, 3, -32, -7), (12, 27, 1, -34, 14), (13, 27, 3, 34, 4),
 ]
 
-def draw_map(cv, ox, oy, cell=5):
-    cv.fill_rect(ox, oy, 48 * cell, 18 * cell, (214, 228, 238))
+def draw_map(cv, ox, oy, cell_w=19, cell_h=6):
+    # Full-width strip map: 48 cols x 16 rows (empty rows 0 and 17 of
+    # the old 18-row grid are cropped; the world spans the box height).
+    cv.fill_rect(ox, oy, 48 * cell_w, 16 * cell_h, (214, 228, 238))
     for gx in range(0, 48, 6):
-        cv.vline(ox + gx * cell, oy, oy + 18 * cell, (190, 205, 220), 1)
-    for gy in range(0, 18, 6):
-        cv.hline(ox, ox + 48 * cell, oy + gy * cell, (190, 205, 220), 1)
+        cv.vline(ox + gx * cell_w, oy, oy + 16 * cell_h, (190, 205, 220), 1)
+    for gy in range(0, 16, 6):
+        cv.hline(ox, ox + 48 * cell_w, oy + gy * cell_h, (190, 205, 220), 1)
     for row, spans in MAP_SPANS.items():
+        r = row - 1  # crop empty row 0
         for c0, c1 in spans:
             for c in range(c0, c1 + 1):
-                cv.fill_rect(ox + c * cell, oy + row * cell,
-                             cell, cell, LAND)
+                cv.fill_rect(ox + c * cell_w, oy + r * cell_h,
+                             cell_w, cell_h, LAND)
                 if (c * 7 + row * 3) % 4 == 0:
-                    cv.set(ox + c * cell + 1, oy + row * cell + 1,
+                    cv.set(ox + c * cell_w + 1, oy + r * cell_h + 1,
                            (170, 152, 112))
-    cv.hline(ox, ox + 48 * cell - 1, oy + 9 * cell, (150, 150, 150), 1)
+    cv.hline(ox, ox + 48 * cell_w - 1, oy + 8 * cell_h, (150, 150, 150), 1)
     for num, col, row, dx, dy in MAP_DOTS:
-        px = ox + col * cell + cell // 2
-        py = oy + row * cell + cell // 2
+        px = ox + col * cell_w + cell_w // 2
+        py = oy + (row - 1) * cell_h + cell_h // 2
+        qx, qy = px + dx, py + dy
+        cv.line(px, py, qx, qy, RED, 1)
         cv.fill_circle(px, py, 4, PAPER)
         cv.fill_circle(px, py, 3, RED)
-        cv.vtext(px + dx, py + dy, str(num), 9, RED, 1.3)
+        cv.fill_circle(qx, qy, 8, RED)
+        s = str(num)
+        sw = cv.vtext_width(s, 8, 1.3)
+        cv.vtext(qx - sw // 2, qy - 3, s, 8, PAPER, 1.3)
 
 # -------------------------------------------------------------- layout ----
 MARGIN = 36
@@ -1445,25 +1512,28 @@ REGIONS = [
 
 # Grounded times live in the story bodies only (Peru quake 00:09 UTC,
 # Banda Sea quake 09:42 UTC, BepiColombo insertion 18:24 UTC). The
-# separate UTC timeline strip was dropped in v7 -- no top entry has one.
+# UTC timeline strip (v8) shows those three plus two approximate times
+# -- Riyadh ~02:00 (TOP3 #1, "shortly after 02:00", no UTC marker)
+# and Geneva talks end 04:30 (BOT5 #11, no UTC marker) -- each marked
+# (APPROX). No other times are shown.
 
 TOP3 = [
     dict(pic=pic_riyadh, tag="RIYADH", tag2="THREE MISSILES DOWN",
-         cap="CONFIRMED · REUTERS", w=304, pic_h=114, head_em=19,
+         cap="CONFIRMED · REUTERS", w=304, pic_h=100, head_em=19,
          kicker="1 RIYADH — MISSILES",
          head="Houthis fire missiles at Riyadh",
          body="Saudi defences intercepted three Houthi ballistic "
               "missiles headed for Riyadh early on Saturday, the "
               "coalition said, after the attack was confirmed "
               "shortly after 02:00. (Reuters)"),
-    dict(pic=pic_summit, tag="COP31", tag2="TALKS IN OVERTIME",
-         cap="REPORTED · AP", w=304, pic_h=114, head_em=19,
+    dict(pic=pic_cop31, tag="COP31", tag2="TALKS IN OVERTIME",
+         cap="REPORTED · AP", w=304, pic_h=100, head_em=19,
          kicker="2 ANTALYA — CLIMATE",
          head="COP31 deadlocked over fossil fuels",
          body="Negotiators went into overtime on Saturday; the "
               "draft deal leaves fossil fuels out. (AP)"),
     dict(pic=pic_quake, tag="PERU QUAKE", tag2="FELT IN LIMA",
-         cap="OFFICIAL · USGS", w=304, pic_h=114, head_em=19,
+         cap="OFFICIAL · USGS", w=304, pic_h=100, head_em=19,
          kicker="3 JUNIN, PERU — QUAKE",
          head="Peru quake shakes Andes, felt in Lima",
          body="Magnitude 6.7 at 00:09 UTC on Saturday; felt in "
@@ -1653,7 +1723,7 @@ def draw():
                          PAPER, 1.2)
         x += wseg
 
-    # ---- top 3 stories (UTC timeline strip dropped in v7) ----
+    # ---- top 3 stories + UTC timeline strip (v8, restored) ----
     cv.vtext(MARGIN, 224, "TOP STORIES", 11, RED, 1.4)
     cv.hline(MARGIN + 92, RIGHT, 227, RED, 1)
     top_x = [MARGIN, 360, 684]
@@ -1665,8 +1735,8 @@ def draw():
         tag(cv, sx + 5, 237, story['tag'])
         tag_white(cv, sx + 5, 254, story['tag2'])
         caption_strip(cv, sx + 1, 232 + ph - 14, w - 2, story['cap'])
-        cv.vtext(sx, 352, story['kicker'], 10, RED, 1.3)
-        y = 364
+        cv.vtext(sx, 338, story['kicker'], 10, RED, 1.3)
+        y = 350
         for line in cv.vwrap(story['head'], story['head_em'], w, 1.3):
             cv.vtext(sx, y, line, story['head_em'], INK, 1.3)
             y += story['head_em'] + 4
@@ -1674,18 +1744,46 @@ def draw():
         for line in cv.vwrap(story['body'], 11, w, 1.0):
             cv.vtext(sx, y, line, 11, GRAY)
             y += 13
-    cv.hline(MARGIN, RIGHT, 478, INK, 1)
+    # UTC timeline: rule with a tick per event; labels alternate above
+    # and below so the close pair 00:09 / 02:00 never collides. Times
+    # are the three precise UTC times from the story bodies plus two
+    # approximate ones, marked (APPROX). ("*" and "~" are not in the
+    # vector font -- they render blank -- so the marker is spelled out.)
+    _tl = [
+        ("00:09", "PERU QUAKE 6.7", 9, "below1"),
+        ("02:00", "RIYADH MISSILES (APPROX)", 120, "below2"),
+        ("04:30", "GENEVA TALKS END (APPROX)", 270, "above"),
+        ("09:42", "BANDA SEA QUAKE 6.8", 582, "below1"),
+        ("18:24", "BEPICOLOMBO ORBIT", 1104, "above"),
+    ]
+    cv.vtext(MARGIN, 428, "THE DAY IN UTC", 9, RED, 1.3)
+    cv.hline(MARGIN, RIGHT, 441, INK, 1)
+    for _t, _lab, _mins, _row in _tl:
+        _tx = MARGIN + 952 * _mins // 1440
+        cv.vline(_tx, 437, 445, RED, 2)
+        _s = _t + " " + _lab
+        _w = cv.vtext_width(_s, 8, 1.3)
+        _lx = _tx - _w // 2
+        if _lx < MARGIN:
+            _lx = MARGIN
+        if _lx + _w > RIGHT:
+            _lx = RIGHT - _w
+        _ly = 428 if _row == "above" else (446 if _row == "below1" else 457)
+        cv.vtext(_lx, _ly, _t + " ", 8, RED, 1.3)
+        cv.vtext(_lx + cv.vtext_width(_t + " ", 8, 1.3), _ly, _lab, 8,
+                 INK, 1.3)
+    cv.hline(MARGIN, RIGHT, 468, INK, 1)
 
-    # ---- five-story rows (middle + bottom) ----
+    # ---- five-story rows (middle + bottom; v8: pics 56->48) ----
     def five_row(y0, stories):
         xs = [MARGIN, 229, 422, 615, 808]
         for sx, story in zip(xs, stories):
-            pic_box(cv, sx, y0, 180, 56)
-            story['pic'](cv, sx + 1, y0 + 1, 178, 54)
+            pic_box(cv, sx, y0, 180, 48)
+            story['pic'](cv, sx + 1, y0 + 1, 178, 46)
             tag(cv, sx + 5, y0 + 5, story['tag'], em=9)
-            caption_strip(cv, sx + 1, y0 + 56 - 13, 178, story['cap'])
-            cv.vtext(sx, y0 + 60, story['kicker'], 9, RED, 1.3)
-            y = y0 + 71
+            caption_strip(cv, sx + 1, y0 + 48 - 13, 178, story['cap'])
+            cv.vtext(sx, y0 + 52, story['kicker'], 9, RED, 1.3)
+            y = y0 + 63
             for line in cv.vwrap(story['head'], 12, 180, 1.25):
                 cv.vtext(sx, y, line, 12, INK, 1.25)
                 y += 13
@@ -1694,38 +1792,37 @@ def draw():
                 cv.vtext(sx, y, line, 10, GRAY)
                 y += 11
 
-    cv.vtext(MARGIN, 484, "MORE FROM THE DAY", 11, RED, 1.4)
-    cv.hline(MARGIN + 148, RIGHT, 487, RED, 1)
-    five_row(494, MID5)
-    five_row(622, BOT5)
-    cv.hline(MARGIN, RIGHT, 750, INK, 1)
+    cv.vtext(MARGIN, 474, "MORE FROM THE DAY", 11, RED, 1.4)
+    cv.hline(MARGIN + 148, RIGHT, 477, RED, 1)
+    five_row(484, MID5)
+    five_row(600, BOT5)
+    cv.hline(MARGIN, RIGHT, 719, INK, 1)
 
-    # ---- map + also list ----
-    cv.vtext(MARGIN, 756, "WHERE IT HAPPENED", 11, RED, 1.4)
-    cv.vtext(252, 756, "ALSO ON SATURDAY 21 NOVEMBER — 22 MORE STORIES",
-             11, INK, 1.3)
-    pic_box(cv, MARGIN, 768, 204, 110)
-    draw_map(cv, MARGIN + 5, 773, cell=4)
-    for i, line in enumerate(cv.vwrap(
-            "EACH NUMBER MATCHES A STORY ON THIS PAGE. "
-            "8 IS IN ORBIT ROUND MERCURY — OFF THE MAP.", 7, 192)):
-        cv.vtext(MARGIN, 882 + i * 9, line, 7, GRAY)
-    draw_list_col(cv, 252, 768, ALSO_LEFT, w=360, em=9)
-    draw_list_col(cv, 624, 768, ALSO_RIGHT, w=360, em=9)
-
-    # ---- legend ----
-    cv.vtext(MARGIN, 910, LEGEND, 9, INK, 1.1)
-    cv.hline(MARGIN, RIGHT, 922, INK, 1)
+    # ---- map + also list (v8: full-width map, ALSO in 3 columns) ----
+    cv.vtext(MARGIN, 725, "WHERE IT HAPPENED", 11, RED, 1.4)
+    cv.vtext_right(RIGHT, 725,
+                   "ALSO ON SATURDAY 21 NOVEMBER — 22 MORE STORIES",
+                   11, INK, 1.3)
+    pic_box(cv, MARGIN, 738, 952, 100)
+    draw_map(cv, MARGIN + 20, 740)
+    _note = ("EACH NUMBER MATCHES A STORY ON THIS PAGE. "
+             "8 IS IN ORBIT ROUND MERCURY — OFF THE MAP.")
+    cv.vtext(MARGIN, 842, _note, 8, GRAY)
+    cv.vtext(MARGIN + cv.vtext_width(_note, 8) + 8, 842, LEGEND, 8, INK, 1.1)
+    draw_list_col(cv, 36, 856, ALSO_LEFT[:8], w=312, em=8, leading=10)
+    draw_list_col(cv, 353, 856, ALSO_LEFT[8:] + ALSO_RIGHT[:4], w=312,
+                  em=8, leading=10)
+    draw_list_col(cv, 670, 856, ALSO_RIGHT[4:], w=312, em=8, leading=10)
 
     # ---- date check ----
-    cv.fill_rect(MARGIN, 928, 952, 56, (253, 238, 232))
-    hatch_diag(cv, MARGIN + 2, 930, 952 - 4, 52, (245, 228, 220), step=14)
-    cv.hline(MARGIN, RIGHT, 928, RED, 2)
-    cv.hline(MARGIN, RIGHT, 983, RED, 2)
-    cv.vline(MARGIN, 928, 983, RED, 2)
-    cv.vline(RIGHT, 928, 983, RED, 2)
-    cv.vtext(MARGIN + 8, 932, "DATE CHECK", 9, RED, 1.3)
-    y = 943
+    cv.fill_rect(MARGIN, 940, 952, 43, (253, 238, 232))
+    hatch_diag(cv, MARGIN + 2, 942, 952 - 4, 39, (245, 228, 220), step=14)
+    cv.hline(MARGIN, RIGHT, 940, RED, 2)
+    cv.hline(MARGIN, RIGHT, 982, RED, 2)
+    cv.vline(MARGIN, 940, 982, RED, 2)
+    cv.vline(RIGHT, 940, 982, RED, 2)
+    cv.vtext(MARGIN + 8, 943, "DATE CHECK", 9, RED, 1.3)
+    y = 953
     for line in cv.vwrap(DATE_CHECK, 9, 920):
         cv.vtext(MARGIN + 8, y, line, 9, INK)
         y += 10
